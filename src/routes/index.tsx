@@ -1,26 +1,43 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { Navbar } from "@/components/landing/Navbar";
+import { Hero } from "@/components/landing/Hero";
+import { Categories } from "@/components/landing/Categories";
+import { Creations } from "@/components/landing/Creations";
+import { Couturiers } from "@/components/landing/Couturiers";
+import { SurMesure } from "@/components/landing/SurMesure";
+import { Testimonials } from "@/components/landing/Testimonials";
+import { CTA } from "@/components/landing/CTA";
+import { Footer } from "@/components/landing/Footer";
 
 export const Route = createFileRoute("/")({
   component: Index,
+  head: () => ({
+    meta: [
+      { title: "Sunu Couture — La maison sénégalaise du sur-mesure" },
+      {
+        name: "description",
+        content:
+          "Découvrez les plus belles créations des couturiers sénégalais : boubou, bazin riche, tenues de mariage et broderies d'exception. Commandez en sur-mesure.",
+      },
+      { property: "og:title", content: "Sunu Couture — Couture sénégalaise premium" },
+      { property: "og:description", content: "L'élégance africaine cousue main, livrée partout au Sénégal." },
+      { property: "og:type", content: "website" },
+    ],
+  }),
 });
 
-// IMPORTANT: Replace this placeholder. For sites with multiple pages (About, Services, Contact, etc.),
-// create separate route files (about.tsx, services.tsx, contact.tsx) — don't put all pages in this file.
-function PlaceholderIndex() {
-  return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
-    </div>
-  );
-}
-
 function Index() {
-  return <PlaceholderIndex />;
+  return (
+    <main className="min-h-screen bg-background text-foreground">
+      <Navbar />
+      <Hero />
+      <Categories />
+      <Creations />
+      <Couturiers />
+      <SurMesure />
+      <Testimonials />
+      <CTA />
+      <Footer />
+    </main>
+  );
 }
