@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Menu, X, Search, ShoppingBag, User, LogOut, LayoutDashboard, MessageCircle, Heart } from "lucide-react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/use-auth";
+import logo from "@/assets/logo.png";
 
 const links = [
   { href: "/", label: "Accueil" },
@@ -38,11 +39,9 @@ export function Navbar() {
       }`}
     >
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-10">
-        <Link to="/" className="flex items-center gap-2.5">
-          <span className="grid h-9 w-9 place-items-center rounded-full bg-royal text-ivory shadow-gold">
-            <span className="font-display text-lg italic">S</span>
-          </span>
-          <span className="font-display text-2xl tracking-tight">
+        <Link to="/" className="flex items-center gap-3">
+          <img src={logo} alt="Sunu Couture" className="h-12 w-12 object-contain" />
+          <span className="font-display text-2xl tracking-tight hidden sm:inline">
             Sunu <span className="italic gold-text">Couture</span>
           </span>
         </Link>
