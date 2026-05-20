@@ -37,9 +37,9 @@ function DashboardPage() {
 
   useEffect(() => {
     if (!user) return;
-    supabase.from("listings").select("*").eq("seller_id", user.id).order("created_at", { ascending: false })
+    supabase.from("listings").select("*").eq("couturier_id", user.id).order("created_at", { ascending: false })
       .then(({ data }) => setListings(data ?? []));
-    supabase.from("orders").select("*").eq("seller_id", user.id).order("created_at", { ascending: false })
+    supabase.from("orders").select("*").eq("couturier_id", user.id).order("created_at", { ascending: false })
       .then(({ data }) => setOrders(data ?? []));
   }, [user]);
 
@@ -47,10 +47,10 @@ function DashboardPage() {
     return <div className="min-h-screen grid place-items-center text-slate-500">Chargement…</div>;
   }
 
-  const revenue = orders.filter((o) => o.status === "paid" || o.status === "completed")
-    .reduce((sum, o) => sum + (Number(o.amount) || 0), 0);
-  const pending = orders.filter((o) => o.status === "pending").length;
-  const totalViews = listings.reduce((s, l) => s + (l.views ?? 0), 0);
+  const revenue = orders.filter((o: any) => o.status === "paid" || o.status === "completed")
+    .reduce((sum: number, o: any) => sum + (Number(o.amount_xof) || 0), 0);
+  const pending = orders.filter((o: any) => o.status === "pending").length;
+  const totalViews = listings.reduce((s: number, l: any) => s + (l.views_count ?? 0), 0);
 
   const navItems: { id: Tab; label: string; icon: any }[] = [
     { id: "overview", label: "Vue d'ensemble", icon: LayoutDashboard },
