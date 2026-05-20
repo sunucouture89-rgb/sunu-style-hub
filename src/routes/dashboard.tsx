@@ -289,10 +289,10 @@ function Payments({ revenue, orders }: any) {
           <div className="mt-6">
             <h3 className="mb-2 text-sm font-medium text-slate-500">Historique</h3>
             <ul className="divide-y divide-slate-100">
-              {orders.slice(0, 5).map((o) => (
+              {orders.slice(0, 5).map((o: any) => (
                 <li key={o.id} className="flex justify-between py-2 text-sm">
                   <span>#{String(o.id).slice(0, 8)}</span>
-                  <span>{Number(o.amount ?? 0).toLocaleString()} FCFA</span>
+                  <span>{Number(o.amount_xof ?? 0).toLocaleString()} FCFA</span>
                 </li>
               ))}
             </ul>
