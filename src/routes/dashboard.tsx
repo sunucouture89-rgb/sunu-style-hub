@@ -150,9 +150,9 @@ function Overview({ revenue, pending, totalViews, listingsCount }: any) {
           <h1 className="font-display text-3xl text-slate-900">Bonjour 👋</h1>
           <p className="text-sm text-slate-500">Voici un aperçu de votre activité aujourd'hui.</p>
         </div>
-        <button className="hidden items-center gap-2 rounded-full bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-emerald-700 sm:flex">
+        <Link to="/dashboard/listings/new" className="hidden items-center gap-2 rounded-full bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-emerald-700 sm:flex">
           <Plus className="h-4 w-4" /> Nouvelle annonce
-        </button>
+        </Link>
       </header>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -198,9 +198,9 @@ function Listings({ listings }: { listings: any[] }) {
     <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
       <div className="mb-5 flex items-center justify-between">
         <h2 className="font-display text-xl">Mes annonces</h2>
-        <button className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700">
+        <Link to="/dashboard/listings/new" className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700">
           <Plus className="h-4 w-4" /> Nouvelle annonce
-        </button>
+        </Link>
       </div>
       {listings.length === 0 ? (
         <Empty icon={Package} title="Aucune annonce" desc="Publiez votre première création pour attirer des clients." />
