@@ -1,7 +1,8 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import {
   LayoutDashboard,
   Package,
@@ -19,21 +20,20 @@ import {
 } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard")({
-  component: DashboardPage,
+  component: () => (
+    <ProtectedRoute>
+      <DashboardPage />
+    </ProtectedRoute>
+  ),
 });
 
 type Tab = "overview" | "listings" | "orders" | "payments" | "boost";
 
 function DashboardPage() {
   const { user, roles, loading } = useAuth();
-  const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>("overview");
   const [listings, setListings] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
-
-  useEffect(() => {
-    if (!loading && !user) navigate({ to: "/login" });
-  }, [loading, user, navigate]);
 
   useEffect(() => {
     if (!user) return;
