@@ -1,16 +1,21 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { toast } from "sonner";
+import { parseAuthRedirect, resolveAuthRedirect, type AuthRedirect } from "@/lib/auth-navigation";
+import { useAuth } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/signup")({
   component: SignupPage,
+  validateSearch: (search) => ({ redirect: parseAuthRedirect(search.redirect) }),
   head: () => ({ meta: [{ title: "Créer un compte — Sunu Couture" }] }),
 });
 
-function SignupPage() {
+export function SignupPage() {
   const navigate = useNavigate();
+  const search = Route.useSearch() as { redirect?: AuthRedirect };
+  const { user, roles, loading: authLoading } = useAuth();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -24,7 +29,7 @@ function SignupPage() {
       email,
       password,
       options: {
-        emailRedirectTo: window.location.origin,
+        emailRedirectTo: `${window.location.origin}${resolveAuthRedirect(search.redirect, [role])}`,
         data: { full_name: fullName, role },
       },
     });
@@ -37,14 +42,19 @@ function SignupPage() {
       await supabase.from("user_roles").upsert({ user_id: data.user.id, role }, { onConflict: "user_id,role" });
     }
     setLoading(false);
-    toast.success("Bienvenue ! Compte créé.");
-    navigate({ to: role === "couturier" ? "/dashboard" : "/" });
+    toast.success(data.session ? "Bienvenue ! Compte créé." : "Compte créé. Vérifiez votre email pour vous connecter.");
+    navigate({ to: data.session ? resolveAuthRedirect(search.redirect, [role]) : "/login", search: { redirect: resolveAuthRedirect(search.redirect, [role]) } });
   };
 
   const oauth = async (provider: "google" | "apple") => {
     const r = await lovable.auth.signInWithOAuth(provider, { redirect_uri: window.location.origin });
     if (r.error) toast.error(r.error.message);
+    if (!r.redirected && !r.error) navigate({ to: resolveAuthRedirect(search.redirect, roles) });
   };
+
+  useEffect(() => {
+    if (!authLoading && user) navigate({ to: resolveAuthRedirect(search.redirect, roles) });
+  }, [authLoading, navigate, roles, search.redirect, user]);
 
   return (
     <main className="min-h-screen grid place-items-center bg-secondary/40 px-4 py-12">
