@@ -2,9 +2,14 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { R2Uploader, type R2Asset } from "@/components/R2Uploader";
 import { ArrowLeft } from "lucide-react";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 export const Route = createFileRoute("/uploads")({
-  component: UploadsPage,
+  component: () => (
+    <ProtectedRoute>
+      <UploadsPage />
+    </ProtectedRoute>
+  ),
   head: () => ({
     meta: [{ title: "Téléversements — Sunu Couture" }],
   }),

@@ -1,19 +1,28 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/use-auth";
+import { parseAuthRedirect, resolveAuthRedirect, type AuthRedirect } from "@/lib/auth-navigation";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
+  validateSearch: (search) => ({ redirect: parseAuthRedirect(search.redirect) }),
   head: () => ({ meta: [{ title: "Connexion — Sunu Couture" }] }),
 });
 
 function LoginPage() {
   const navigate = useNavigate();
+  const search = Route.useSearch() as { redirect?: AuthRedirect };
+  const { user, roles, loading: authLoading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!authLoading && user) navigate({ to: resolveAuthRedirect(search.redirect, roles) });
+  }, [authLoading, navigate, roles, search.redirect, user]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,12 +31,13 @@ function LoginPage() {
     setLoading(false);
     if (error) return toast.error(error.message);
     toast.success("Connecté !");
-    navigate({ to: "/" });
+    navigate({ to: resolveAuthRedirect(search.redirect, roles) });
   };
 
   const oauth = async (provider: "google" | "apple") => {
     const r = await lovable.auth.signInWithOAuth(provider, { redirect_uri: window.location.origin });
     if (r.error) toast.error(r.error.message);
+    if (!r.redirected && !r.error) navigate({ to: resolveAuthRedirect(search.redirect, roles) });
   };
 
   return (
