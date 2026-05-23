@@ -58,6 +58,8 @@ function NewListingPage() {
   const [submitting, setSubmitting] = useState(false);
   const [media, setMedia] = useState<R2Asset[]>([]);
   const [sizes, setSizes] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState("");
+  const [tags, setTags] = useState<string[]>([]);
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -66,11 +68,20 @@ function NewListingPage() {
     city: "Dakar",
     price_xof: "",
     delivery_days: "14",
+    gender: "",
+    stock: "1",
+    whatsapp_number: "",
+    delivery_available: false,
   });
 
-  const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
+  const set = (k: keyof typeof form, v: string | boolean) => setForm((f) => ({ ...f, [k]: v } as any));
   const toggleSize = (s: string) =>
     setSizes((cur) => (cur.includes(s) ? cur.filter((x) => x !== s) : [...cur, s]));
+  const addTag = () => {
+    const t = tagInput.trim().replace(/^#/, "");
+    if (t && !tags.includes(t) && tags.length < 10) setTags([...tags, t]);
+    setTagInput("");
+  };
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
