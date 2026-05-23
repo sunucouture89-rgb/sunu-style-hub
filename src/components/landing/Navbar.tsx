@@ -6,9 +6,9 @@ import logo from "@/assets/logo.png";
 
 const links = [
   { href: "/", label: "Accueil" },
+  { href: "/annonces", label: "Annonces" },
   { href: "/#categories", label: "Catégories" },
   { href: "/#couturiers", label: "Couturiers" },
-  { href: "/#creations", label: "Créations" },
 ];
 
 export function Navbar() {

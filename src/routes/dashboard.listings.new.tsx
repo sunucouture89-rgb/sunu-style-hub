@@ -17,12 +17,23 @@ export const Route = createFileRoute("/dashboard/listings/new")({
 });
 
 const CATEGORIES = [
+  { value: "boubou-homme", label: "Boubou Homme" },
+  { value: "boubou-femme", label: "Boubou Femme" },
+  { value: "grand-boubou", label: "Grand Boubou" },
+  { value: "robes-africaines", label: "Robes africaines" },
+  { value: "mariage", label: "Mariage" },
+  { value: "broderie", label: "Broderie" },
+  { value: "enfants", label: "Enfants" },
+  { value: "chaussures", label: "Chaussures" },
+  { value: "accessoires", label: "Accessoires" },
+  { value: "luxe", label: "Mode de luxe" },
+];
+
+const GENDERS = [
   { value: "femme", label: "Femme" },
   { value: "homme", label: "Homme" },
+  { value: "mixte", label: "Mixte" },
   { value: "enfant", label: "Enfant" },
-  { value: "mariage", label: "Mariage" },
-  { value: "accessoires", label: "Accessoires" },
-  { value: "tissus", label: "Tissus" },
 ];
 
 const SIZES = ["XS", "S", "M", "L", "XL", "XXL", "Sur mesure"];
@@ -35,6 +46,10 @@ const schema = z.object({
   city: z.string().trim().max(80).optional(),
   price_xof: z.number().int().min(500, "Prix minimum 500 FCFA").max(50_000_000),
   delivery_days: z.number().int().min(1).max(180),
+  gender: z.string().optional(),
+  stock: z.number().int().min(0).max(9999),
+  whatsapp_number: z.string().trim().max(30).optional(),
+  delivery_available: z.boolean(),
 });
 
 function NewListingPage() {
@@ -43,6 +58,8 @@ function NewListingPage() {
   const [submitting, setSubmitting] = useState(false);
   const [media, setMedia] = useState<R2Asset[]>([]);
   const [sizes, setSizes] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState("");
+  const [tags, setTags] = useState<string[]>([]);
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -51,11 +68,20 @@ function NewListingPage() {
     city: "Dakar",
     price_xof: "",
     delivery_days: "14",
+    gender: "",
+    stock: "1",
+    whatsapp_number: "",
+    delivery_available: false,
   });
 
-  const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
+  const set = (k: keyof typeof form, v: string | boolean) => setForm((f) => ({ ...f, [k]: v } as any));
   const toggleSize = (s: string) =>
     setSizes((cur) => (cur.includes(s) ? cur.filter((x) => x !== s) : [...cur, s]));
+  const addTag = () => {
+    const t = tagInput.trim().replace(/^#/, "");
+    if (t && !tags.includes(t) && tags.length < 10) setTags([...tags, t]);
+    setTagInput("");
+  };
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,6 +91,7 @@ function NewListingPage() {
       ...form,
       price_xof: Number(form.price_xof),
       delivery_days: Number(form.delivery_days),
+      stock: Number(form.stock || 0),
     });
     if (!parsed.success) {
       toast.error(parsed.error.issues[0]?.message ?? "Formulaire invalide");
@@ -87,6 +114,7 @@ function NewListingPage() {
           : null,
       ].filter(Boolean).join("\n\n");
 
+      const videoAssets = media.filter((m) => m.contentType.startsWith("video/"));
       const { data: listing, error } = await supabase
         .from("listings")
         .insert({
@@ -100,7 +128,12 @@ function NewListingPage() {
           delivery_days: parsed.data.delivery_days,
           cover_image_url: cover,
           status: "active",
-        })
+          gender: parsed.data.gender || null,
+          stock: parsed.data.stock,
+          tags,
+          whatsapp_number: parsed.data.whatsapp_number || null,
+          delivery_available: parsed.data.delivery_available,
+        } as any)
         .select()
         .single();
 
@@ -115,6 +148,12 @@ function NewListingPage() {
         const { error: imgErr } = await supabase.from("listing_images").insert(rows);
         if (imgErr) throw imgErr;
       }
+
+      if (videoAssets.length) {
+        const vrows = videoAssets.map((v, i) => ({ listing_id: listing.id, url: v.publicUrl, position: i }));
+        await (supabase as any).from("ad_videos").insert(vrows);
+      }
+
 
       toast.success("Annonce publiée !");
       navigate({ to: "/dashboard" });
@@ -212,6 +251,48 @@ function NewListingPage() {
               })}
             </div>
           </Field>
+
+          <div className="grid gap-4 sm:grid-cols-3">
+            <Field label="Genre">
+              <select value={form.gender} onChange={(e) => set("gender", e.target.value)} className="input">
+                <option value="">—</option>
+                {GENDERS.map((g) => <option key={g.value} value={g.value}>{g.label}</option>)}
+              </select>
+            </Field>
+            <Field label="Stock disponible">
+              <input type="number" min={0} max={9999} value={form.stock} onChange={(e) => set("stock", e.target.value)} className="input" />
+            </Field>
+            <Field label="WhatsApp">
+              <input value={form.whatsapp_number} onChange={(e) => set("whatsapp_number", e.target.value)} placeholder="+221 77 000 00 00" maxLength={30} className="input" />
+            </Field>
+          </div>
+
+          <Field label="Tags (max 10)">
+            <div className="flex flex-wrap gap-2 mb-2">
+              {tags.map((t) => (
+                <span key={t} className="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-1 text-xs">
+                  #{t}
+                  <button type="button" onClick={() => setTags(tags.filter((x) => x !== t))} className="hover:text-red-600">×</button>
+                </span>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <input
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addTag(); } }}
+                placeholder="bazin, mariage, sur-mesure…"
+                className="input flex-1"
+              />
+              <button type="button" onClick={addTag} className="rounded-lg border border-slate-300 bg-white px-4 text-sm hover:bg-slate-50">Ajouter</button>
+            </div>
+          </Field>
+
+          <label className="inline-flex items-center gap-2 text-sm text-slate-700">
+            <input type="checkbox" checked={form.delivery_available} onChange={(e) => set("delivery_available", e.target.checked)} />
+            Livraison possible
+          </label>
+
 
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Prix (FCFA) *">
