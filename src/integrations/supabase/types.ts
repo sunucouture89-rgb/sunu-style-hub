@@ -14,6 +14,62 @@ export type Database = {
   }
   public: {
     Tables: {
+      ad_videos: {
+        Row: {
+          created_at: string
+          id: string
+          listing_id: string
+          position: number
+          poster_url: string | null
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          listing_id: string
+          position?: number
+          poster_url?: string | null
+          url: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          listing_id?: string
+          position?: number
+          poster_url?: string | null
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ad_videos_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      categories: {
+        Row: {
+          emoji: string | null
+          label: string
+          position: number
+          slug: string
+        }
+        Insert: {
+          emoji?: string | null
+          label: string
+          position?: number
+          slug: string
+        }
+        Update: {
+          emoji?: string | null
+          label?: string
+          position?: number
+          slug?: string
+        }
+        Relationships: []
+      }
       conversations: {
         Row: {
           client_id: string
@@ -114,17 +170,22 @@ export type Database = {
           couturier_id: string
           cover_image_url: string | null
           created_at: string
+          delivery_available: boolean
           delivery_days: number | null
           description: string | null
           fabric: string | null
+          gender: string | null
           id: string
           is_premium: boolean
           premium_until: string | null
           price_xof: number
           status: Database["public"]["Enums"]["listing_status"]
+          stock: number
+          tags: string[]
           title: string
           updated_at: string
           views_count: number
+          whatsapp_number: string | null
         }
         Insert: {
           category: string
@@ -132,17 +193,22 @@ export type Database = {
           couturier_id: string
           cover_image_url?: string | null
           created_at?: string
+          delivery_available?: boolean
           delivery_days?: number | null
           description?: string | null
           fabric?: string | null
+          gender?: string | null
           id?: string
           is_premium?: boolean
           premium_until?: string | null
           price_xof: number
           status?: Database["public"]["Enums"]["listing_status"]
+          stock?: number
+          tags?: string[]
           title: string
           updated_at?: string
           views_count?: number
+          whatsapp_number?: string | null
         }
         Update: {
           category?: string
@@ -150,17 +216,22 @@ export type Database = {
           couturier_id?: string
           cover_image_url?: string | null
           created_at?: string
+          delivery_available?: boolean
           delivery_days?: number | null
           description?: string | null
           fabric?: string | null
+          gender?: string | null
           id?: string
           is_premium?: boolean
           premium_until?: string | null
           price_xof?: number
           status?: Database["public"]["Enums"]["listing_status"]
+          stock?: number
+          tags?: string[]
           title?: string
           updated_at?: string
           views_count?: number
+          whatsapp_number?: string | null
         }
         Relationships: []
       }
