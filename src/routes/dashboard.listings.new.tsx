@@ -17,12 +17,23 @@ export const Route = createFileRoute("/dashboard/listings/new")({
 });
 
 const CATEGORIES = [
+  { value: "boubou-homme", label: "Boubou Homme" },
+  { value: "boubou-femme", label: "Boubou Femme" },
+  { value: "grand-boubou", label: "Grand Boubou" },
+  { value: "robes-africaines", label: "Robes africaines" },
+  { value: "mariage", label: "Mariage" },
+  { value: "broderie", label: "Broderie" },
+  { value: "enfants", label: "Enfants" },
+  { value: "chaussures", label: "Chaussures" },
+  { value: "accessoires", label: "Accessoires" },
+  { value: "luxe", label: "Mode de luxe" },
+];
+
+const GENDERS = [
   { value: "femme", label: "Femme" },
   { value: "homme", label: "Homme" },
+  { value: "mixte", label: "Mixte" },
   { value: "enfant", label: "Enfant" },
-  { value: "mariage", label: "Mariage" },
-  { value: "accessoires", label: "Accessoires" },
-  { value: "tissus", label: "Tissus" },
 ];
 
 const SIZES = ["XS", "S", "M", "L", "XL", "XXL", "Sur mesure"];
@@ -35,6 +46,10 @@ const schema = z.object({
   city: z.string().trim().max(80).optional(),
   price_xof: z.number().int().min(500, "Prix minimum 500 FCFA").max(50_000_000),
   delivery_days: z.number().int().min(1).max(180),
+  gender: z.string().optional(),
+  stock: z.number().int().min(0).max(9999),
+  whatsapp_number: z.string().trim().max(30).optional(),
+  delivery_available: z.boolean(),
 });
 
 function NewListingPage() {
