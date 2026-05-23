@@ -91,6 +91,7 @@ function NewListingPage() {
       ...form,
       price_xof: Number(form.price_xof),
       delivery_days: Number(form.delivery_days),
+      stock: Number(form.stock || 0),
     });
     if (!parsed.success) {
       toast.error(parsed.error.issues[0]?.message ?? "Formulaire invalide");
