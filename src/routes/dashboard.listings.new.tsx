@@ -114,6 +114,7 @@ function NewListingPage() {
           : null,
       ].filter(Boolean).join("\n\n");
 
+      const videoAssets = media.filter((m) => m.contentType.startsWith("video/"));
       const { data: listing, error } = await supabase
         .from("listings")
         .insert({
@@ -127,7 +128,12 @@ function NewListingPage() {
           delivery_days: parsed.data.delivery_days,
           cover_image_url: cover,
           status: "active",
-        })
+          gender: parsed.data.gender || null,
+          stock: parsed.data.stock,
+          tags,
+          whatsapp_number: parsed.data.whatsapp_number || null,
+          delivery_available: parsed.data.delivery_available,
+        } as any)
         .select()
         .single();
 
@@ -142,6 +148,12 @@ function NewListingPage() {
         const { error: imgErr } = await supabase.from("listing_images").insert(rows);
         if (imgErr) throw imgErr;
       }
+
+      if (videoAssets.length) {
+        const vrows = videoAssets.map((v, i) => ({ listing_id: listing.id, url: v.publicUrl, position: i }));
+        await (supabase as any).from("ad_videos").insert(vrows);
+      }
+
 
       toast.success("Annonce publiée !");
       navigate({ to: "/dashboard" });
