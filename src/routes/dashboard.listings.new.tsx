@@ -252,6 +252,48 @@ function NewListingPage() {
             </div>
           </Field>
 
+          <div className="grid gap-4 sm:grid-cols-3">
+            <Field label="Genre">
+              <select value={form.gender} onChange={(e) => set("gender", e.target.value)} className="input">
+                <option value="">—</option>
+                {GENDERS.map((g) => <option key={g.value} value={g.value}>{g.label}</option>)}
+              </select>
+            </Field>
+            <Field label="Stock disponible">
+              <input type="number" min={0} max={9999} value={form.stock} onChange={(e) => set("stock", e.target.value)} className="input" />
+            </Field>
+            <Field label="WhatsApp">
+              <input value={form.whatsapp_number} onChange={(e) => set("whatsapp_number", e.target.value)} placeholder="+221 77 000 00 00" maxLength={30} className="input" />
+            </Field>
+          </div>
+
+          <Field label="Tags (max 10)">
+            <div className="flex flex-wrap gap-2 mb-2">
+              {tags.map((t) => (
+                <span key={t} className="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-1 text-xs">
+                  #{t}
+                  <button type="button" onClick={() => setTags(tags.filter((x) => x !== t))} className="hover:text-red-600">×</button>
+                </span>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <input
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addTag(); } }}
+                placeholder="bazin, mariage, sur-mesure…"
+                className="input flex-1"
+              />
+              <button type="button" onClick={addTag} className="rounded-lg border border-slate-300 bg-white px-4 text-sm hover:bg-slate-50">Ajouter</button>
+            </div>
+          </Field>
+
+          <label className="inline-flex items-center gap-2 text-sm text-slate-700">
+            <input type="checkbox" checked={form.delivery_available} onChange={(e) => set("delivery_available", e.target.checked)} />
+            Livraison possible
+          </label>
+
+
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Prix (FCFA) *">
               <input
