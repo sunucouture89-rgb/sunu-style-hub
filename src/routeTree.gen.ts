@@ -18,6 +18,7 @@ import { Route as FavoritesRouteImport } from './routes/favorites'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as AnnoncesRouteImport } from './routes/annonces'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AnnoncesIdRouteImport } from './routes/annonces.$id'
 import { Route as DashboardListingsNewRouteImport } from './routes/dashboard.listings.new'
 
 const UploadsRoute = UploadsRouteImport.update({
@@ -65,6 +66,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AnnoncesIdRoute = AnnoncesIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AnnoncesRoute,
+} as any)
 const DashboardListingsNewRoute = DashboardListingsNewRouteImport.update({
   id: '/listings/new',
   path: '/listings/new',
@@ -73,7 +79,7 @@ const DashboardListingsNewRoute = DashboardListingsNewRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/annonces': typeof AnnoncesRoute
+  '/annonces': typeof AnnoncesRouteWithChildren
   '/dashboard': typeof DashboardRouteWithChildren
   '/favorites': typeof FavoritesRoute
   '/login': typeof LoginRoute
@@ -81,11 +87,12 @@ export interface FileRoutesByFullPath {
   '/register': typeof RegisterRoute
   '/signup': typeof SignupRoute
   '/uploads': typeof UploadsRoute
+  '/annonces/$id': typeof AnnoncesIdRoute
   '/dashboard/listings/new': typeof DashboardListingsNewRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/annonces': typeof AnnoncesRoute
+  '/annonces': typeof AnnoncesRouteWithChildren
   '/dashboard': typeof DashboardRouteWithChildren
   '/favorites': typeof FavoritesRoute
   '/login': typeof LoginRoute
@@ -93,12 +100,13 @@ export interface FileRoutesByTo {
   '/register': typeof RegisterRoute
   '/signup': typeof SignupRoute
   '/uploads': typeof UploadsRoute
+  '/annonces/$id': typeof AnnoncesIdRoute
   '/dashboard/listings/new': typeof DashboardListingsNewRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/annonces': typeof AnnoncesRoute
+  '/annonces': typeof AnnoncesRouteWithChildren
   '/dashboard': typeof DashboardRouteWithChildren
   '/favorites': typeof FavoritesRoute
   '/login': typeof LoginRoute
@@ -106,6 +114,7 @@ export interface FileRoutesById {
   '/register': typeof RegisterRoute
   '/signup': typeof SignupRoute
   '/uploads': typeof UploadsRoute
+  '/annonces/$id': typeof AnnoncesIdRoute
   '/dashboard/listings/new': typeof DashboardListingsNewRoute
 }
 export interface FileRouteTypes {
@@ -120,6 +129,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/signup'
     | '/uploads'
+    | '/annonces/$id'
     | '/dashboard/listings/new'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -132,6 +142,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/signup'
     | '/uploads'
+    | '/annonces/$id'
     | '/dashboard/listings/new'
   id:
     | '__root__'
@@ -144,12 +155,13 @@ export interface FileRouteTypes {
     | '/register'
     | '/signup'
     | '/uploads'
+    | '/annonces/$id'
     | '/dashboard/listings/new'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AnnoncesRoute: typeof AnnoncesRoute
+  AnnoncesRoute: typeof AnnoncesRouteWithChildren
   DashboardRoute: typeof DashboardRouteWithChildren
   FavoritesRoute: typeof FavoritesRoute
   LoginRoute: typeof LoginRoute
@@ -224,6 +236,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/annonces/$id': {
+      id: '/annonces/$id'
+      path: '/$id'
+      fullPath: '/annonces/$id'
+      preLoaderRoute: typeof AnnoncesIdRouteImport
+      parentRoute: typeof AnnoncesRoute
+    }
     '/dashboard/listings/new': {
       id: '/dashboard/listings/new'
       path: '/listings/new'
@@ -233,6 +252,18 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface AnnoncesRouteChildren {
+  AnnoncesIdRoute: typeof AnnoncesIdRoute
+}
+
+const AnnoncesRouteChildren: AnnoncesRouteChildren = {
+  AnnoncesIdRoute: AnnoncesIdRoute,
+}
+
+const AnnoncesRouteWithChildren = AnnoncesRoute._addFileChildren(
+  AnnoncesRouteChildren,
+)
 
 interface DashboardRouteChildren {
   DashboardListingsNewRoute: typeof DashboardListingsNewRoute
@@ -248,7 +279,7 @@ const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AnnoncesRoute: AnnoncesRoute,
+  AnnoncesRoute: AnnoncesRouteWithChildren,
   DashboardRoute: DashboardRouteWithChildren,
   FavoritesRoute: FavoritesRoute,
   LoginRoute: LoginRoute,
