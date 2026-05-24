@@ -235,7 +235,50 @@ function NewListingPage() {
               placeholder="Présentez votre création, finitions, occasion…"
               className="input"
             />
+            <button
+              type="button"
+              onClick={runAI}
+              disabled={aiBusy}
+              className="mt-2 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-violet-600 to-fuchsia-500 px-4 py-2 text-xs font-medium text-white hover:opacity-90 disabled:opacity-60"
+            >
+              {aiBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wand2 className="h-3.5 w-3.5" />}
+              Améliorer avec l'IA
+            </button>
           </Field>
+
+          {aiResult && (
+            <div className="rounded-xl border border-violet-200 bg-violet-50/50 p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="font-display text-sm inline-flex items-center gap-1.5"><Sparkles className="h-4 w-4 text-violet-600" /> Suggestions IA</p>
+                <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${aiResult.spam_score > 60 ? "bg-red-100 text-red-700" : "bg-emerald-100 text-emerald-700"}`}>
+                  Score spam : {Math.round(aiResult.spam_score)}/100
+                </span>
+              </div>
+              {aiResult.warnings.length > 0 && (
+                <ul className="text-xs text-amber-700 list-disc pl-4">
+                  {aiResult.warnings.map((w, i) => <li key={i}>{w}</li>)}
+                </ul>
+              )}
+              {aiResult.improved_description && (
+                <div>
+                  <p className="text-xs font-medium text-slate-600 mb-1">Description suggérée</p>
+                  <p className="text-sm bg-white rounded-lg p-3 ring-1 ring-slate-200 whitespace-pre-wrap">{aiResult.improved_description}</p>
+                </div>
+              )}
+              {aiResult.tags.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {aiResult.tags.map((t) => (
+                    <span key={t} className="rounded-full bg-white border border-violet-200 px-2.5 py-1 text-[11px] text-violet-700">#{t}</span>
+                  ))}
+                </div>
+              )}
+              <div className="flex gap-2">
+                <button type="button" onClick={applyAI} className="rounded-full bg-violet-600 text-white px-4 py-1.5 text-xs hover:bg-violet-700">Appliquer</button>
+                <button type="button" onClick={() => setAiResult(null)} className="rounded-full border border-slate-300 px-4 py-1.5 text-xs">Ignorer</button>
+              </div>
+            </div>
+          )}
+
 
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Catégorie *">
