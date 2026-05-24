@@ -17,9 +17,11 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as FavoritesRouteImport } from './routes/favorites'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as AnnoncesRouteImport } from './routes/annonces'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AnnoncesIdRouteImport } from './routes/annonces.$id'
 import { Route as DashboardListingsNewRouteImport } from './routes/dashboard.listings.new'
+import { Route as ApiPublicHooksExpirePremiumRouteImport } from './routes/api/public/hooks/expire-premium'
 
 const UploadsRoute = UploadsRouteImport.update({
   id: '/uploads',
@@ -61,6 +63,11 @@ const AnnoncesRoute = AnnoncesRouteImport.update({
   path: '/annonces',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -76,9 +83,16 @@ const DashboardListingsNewRoute = DashboardListingsNewRouteImport.update({
   path: '/listings/new',
   getParentRoute: () => DashboardRoute,
 } as any)
+const ApiPublicHooksExpirePremiumRoute =
+  ApiPublicHooksExpirePremiumRouteImport.update({
+    id: '/api/public/hooks/expire-premium',
+    path: '/api/public/hooks/expire-premium',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/annonces': typeof AnnoncesRouteWithChildren
   '/dashboard': typeof DashboardRouteWithChildren
   '/favorites': typeof FavoritesRoute
@@ -89,9 +103,11 @@ export interface FileRoutesByFullPath {
   '/uploads': typeof UploadsRoute
   '/annonces/$id': typeof AnnoncesIdRoute
   '/dashboard/listings/new': typeof DashboardListingsNewRoute
+  '/api/public/hooks/expire-premium': typeof ApiPublicHooksExpirePremiumRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/annonces': typeof AnnoncesRouteWithChildren
   '/dashboard': typeof DashboardRouteWithChildren
   '/favorites': typeof FavoritesRoute
@@ -102,10 +118,12 @@ export interface FileRoutesByTo {
   '/uploads': typeof UploadsRoute
   '/annonces/$id': typeof AnnoncesIdRoute
   '/dashboard/listings/new': typeof DashboardListingsNewRoute
+  '/api/public/hooks/expire-premium': typeof ApiPublicHooksExpirePremiumRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/annonces': typeof AnnoncesRouteWithChildren
   '/dashboard': typeof DashboardRouteWithChildren
   '/favorites': typeof FavoritesRoute
@@ -116,11 +134,13 @@ export interface FileRoutesById {
   '/uploads': typeof UploadsRoute
   '/annonces/$id': typeof AnnoncesIdRoute
   '/dashboard/listings/new': typeof DashboardListingsNewRoute
+  '/api/public/hooks/expire-premium': typeof ApiPublicHooksExpirePremiumRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
     | '/annonces'
     | '/dashboard'
     | '/favorites'
@@ -131,9 +151,11 @@ export interface FileRouteTypes {
     | '/uploads'
     | '/annonces/$id'
     | '/dashboard/listings/new'
+    | '/api/public/hooks/expire-premium'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/admin'
     | '/annonces'
     | '/dashboard'
     | '/favorites'
@@ -144,9 +166,11 @@ export interface FileRouteTypes {
     | '/uploads'
     | '/annonces/$id'
     | '/dashboard/listings/new'
+    | '/api/public/hooks/expire-premium'
   id:
     | '__root__'
     | '/'
+    | '/admin'
     | '/annonces'
     | '/dashboard'
     | '/favorites'
@@ -157,10 +181,12 @@ export interface FileRouteTypes {
     | '/uploads'
     | '/annonces/$id'
     | '/dashboard/listings/new'
+    | '/api/public/hooks/expire-premium'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRoute
   AnnoncesRoute: typeof AnnoncesRouteWithChildren
   DashboardRoute: typeof DashboardRouteWithChildren
   FavoritesRoute: typeof FavoritesRoute
@@ -169,6 +195,7 @@ export interface RootRouteChildren {
   RegisterRoute: typeof RegisterRoute
   SignupRoute: typeof SignupRoute
   UploadsRoute: typeof UploadsRoute
+  ApiPublicHooksExpirePremiumRoute: typeof ApiPublicHooksExpirePremiumRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -229,6 +256,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AnnoncesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -249,6 +283,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/dashboard/listings/new'
       preLoaderRoute: typeof DashboardListingsNewRouteImport
       parentRoute: typeof DashboardRoute
+    }
+    '/api/public/hooks/expire-premium': {
+      id: '/api/public/hooks/expire-premium'
+      path: '/api/public/hooks/expire-premium'
+      fullPath: '/api/public/hooks/expire-premium'
+      preLoaderRoute: typeof ApiPublicHooksExpirePremiumRouteImport
+      parentRoute: typeof rootRouteImport
     }
   }
 }
@@ -279,6 +320,7 @@ const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRoute,
   AnnoncesRoute: AnnoncesRouteWithChildren,
   DashboardRoute: DashboardRouteWithChildren,
   FavoritesRoute: FavoritesRoute,
@@ -287,7 +329,18 @@ const rootRouteChildren: RootRouteChildren = {
   RegisterRoute: RegisterRoute,
   SignupRoute: SignupRoute,
   UploadsRoute: UploadsRoute,
+  ApiPublicHooksExpirePremiumRoute: ApiPublicHooksExpirePremiumRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
