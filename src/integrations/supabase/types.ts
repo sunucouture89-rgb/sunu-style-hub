@@ -165,6 +165,8 @@ export type Database = {
       }
       listings: {
         Row: {
+          ai_reviewed_at: string | null
+          ai_spam_score: number | null
           category: string
           city: string | null
           couturier_id: string
@@ -179,6 +181,7 @@ export type Database = {
           is_premium: boolean
           premium_until: string | null
           price_xof: number
+          rejection_reason: string | null
           status: Database["public"]["Enums"]["listing_status"]
           stock: number
           tags: string[]
@@ -188,6 +191,8 @@ export type Database = {
           whatsapp_number: string | null
         }
         Insert: {
+          ai_reviewed_at?: string | null
+          ai_spam_score?: number | null
           category: string
           city?: string | null
           couturier_id: string
@@ -202,6 +207,7 @@ export type Database = {
           is_premium?: boolean
           premium_until?: string | null
           price_xof: number
+          rejection_reason?: string | null
           status?: Database["public"]["Enums"]["listing_status"]
           stock?: number
           tags?: string[]
@@ -211,6 +217,8 @@ export type Database = {
           whatsapp_number?: string | null
         }
         Update: {
+          ai_reviewed_at?: string | null
+          ai_spam_score?: number | null
           category?: string
           city?: string | null
           couturier_id?: string
@@ -225,6 +233,7 @@ export type Database = {
           is_premium?: boolean
           premium_until?: string | null
           price_xof?: number
+          rejection_reason?: string | null
           status?: Database["public"]["Enums"]["listing_status"]
           stock?: number
           tags?: string[]
@@ -359,6 +368,39 @@ export type Database = {
           },
         ]
       }
+      premium_transactions: {
+        Row: {
+          amount_xof: number
+          couturier_id: string
+          created_at: string
+          duration_days: number
+          id: string
+          listing_id: string
+          payment_method: string
+          status: string
+        }
+        Insert: {
+          amount_xof: number
+          couturier_id: string
+          created_at?: string
+          duration_days: number
+          id?: string
+          listing_id: string
+          payment_method?: string
+          status?: string
+        }
+        Update: {
+          amount_xof?: number
+          couturier_id?: string
+          created_at?: string
+          duration_days?: number
+          id?: string
+          listing_id?: string
+          payment_method?: string
+          status?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           atelier_name: string | null
@@ -478,7 +520,13 @@ export type Database = {
     }
     Enums: {
       app_role: "client" | "couturier" | "admin"
-      listing_status: "draft" | "active" | "paused" | "sold"
+      listing_status:
+        | "draft"
+        | "active"
+        | "paused"
+        | "sold"
+        | "pending"
+        | "rejected"
       order_kind: "standard" | "sur_mesure"
       order_status:
         | "pending"
@@ -615,7 +663,14 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["client", "couturier", "admin"],
-      listing_status: ["draft", "active", "paused", "sold"],
+      listing_status: [
+        "draft",
+        "active",
+        "paused",
+        "sold",
+        "pending",
+        "rejected",
+      ],
       order_kind: ["standard", "sur_mesure"],
       order_status: [
         "pending",
