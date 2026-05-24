@@ -1,11 +1,13 @@
 import { createFileRoute, useNavigate, Link, redirect } from "@tanstack/react-router";
 import { useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { toast } from "sonner";
-import { ArrowLeft, Loader2, Save } from "lucide-react";
+import { ArrowLeft, Loader2, Save, Sparkles, Wand2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { R2Uploader, type R2Asset } from "@/components/R2Uploader";
+import { aiAssistListing } from "@/lib/listings.functions";
 
 export const Route = createFileRoute("/dashboard/listings/new")({
   component: NewListingPage,
@@ -55,7 +57,10 @@ const schema = z.object({
 function NewListingPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const aiAssist = useServerFn(aiAssistListing);
   const [submitting, setSubmitting] = useState(false);
+  const [aiBusy, setAiBusy] = useState(false);
+  const [aiResult, setAiResult] = useState<{ spam_score: number; tags: string[]; improved_description: string; warnings: string[] } | null>(null);
   const [media, setMedia] = useState<R2Asset[]>([]);
   const [sizes, setSizes] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
@@ -82,6 +87,30 @@ function NewListingPage() {
     if (t && !tags.includes(t) && tags.length < 10) setTags([...tags, t]);
     setTagInput("");
   };
+
+  const runAI = async () => {
+    if (form.title.trim().length < 3) { toast.error("Renseignez d'abord un titre"); return; }
+    setAiBusy(true);
+    try {
+      const r = await aiAssist({ data: { title: form.title, description: form.description, category: form.category } });
+      setAiResult(r);
+      toast.success("Suggestions IA prêtes ✨");
+    } catch (e: any) {
+      toast.error(e.message ?? "Erreur IA");
+    } finally {
+      setAiBusy(false);
+    }
+  };
+
+  const applyAI = () => {
+    if (!aiResult) return;
+    if (aiResult.improved_description) setForm((f) => ({ ...f, description: aiResult.improved_description }));
+    const merged = Array.from(new Set([...tags, ...aiResult.tags])).slice(0, 10);
+    setTags(merged);
+    setAiResult(null);
+    toast.success("Suggestions appliquées");
+  };
+
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
