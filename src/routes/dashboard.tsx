@@ -1,8 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { boostListing } from "@/lib/listings.functions";
 import {
   LayoutDashboard,
   Package,
@@ -17,6 +20,7 @@ import {
   Crown,
   Check,
   Sparkles,
+  Loader2,
 } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard")({
@@ -121,7 +125,7 @@ function DashboardPage() {
           {tab === "listings" && <Listings listings={listings} />}
           {tab === "orders" && <Orders orders={orders} />}
           {tab === "payments" && <Payments revenue={revenue} orders={orders} />}
-          {tab === "boost" && <Boost />}
+          {tab === "boost" && <Boost listings={listings} />}
         </main>
       </div>
     </div>
@@ -303,12 +307,35 @@ function Payments({ revenue, orders }: any) {
   );
 }
 
-function Boost() {
+function Boost({ listings }: { listings: any[] }) {
+  const boost = useServerFn(boostListing);
+  const [selected, setSelected] = useState<string>("");
+  const [busy, setBusy] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!selected && listings[0]) setSelected(listings[0].id);
+  }, [listings, selected]);
+
   const plans = [
-    { name: "Standard", price: "2 500", duration: "7 jours", features: ["Annonce mise en avant", "Badge Vérifié", "Statistiques basiques"], accent: "border-slate-200" },
-    { name: "Premium", price: "7 500", duration: "30 jours", features: ["Top recherches", "Slider page d'accueil", "Badge Premium doré", "Support prioritaire"], accent: "border-amber-400 ring-2 ring-amber-200", popular: true },
-    { name: "Élite", price: "20 000", duration: "90 jours", features: ["Toutes les options Premium", "Réseaux sociaux", "Page boutique dédiée", "Manager dédié"], accent: "border-emerald-300" },
+    { days: 1, price: 500, name: "Découverte", features: ["Boost 24 h", "Top de la grille", "Badge premium"], accent: "border-slate-200" },
+    { days: 7, price: 2500, name: "Standard", features: ["Boost 7 jours", "Slider accueil", "Badge Vérifié"], accent: "border-slate-200" },
+    { days: 30, price: 7500, name: "Premium", features: ["Boost 30 jours", "Slider accueil", "Badge doré", "Support prioritaire"], accent: "border-amber-400 ring-2 ring-amber-200", popular: true },
+    { days: 90, price: 20000, name: "Élite", features: ["Boost 90 jours", "Toutes les options", "Page boutique"], accent: "border-emerald-300" },
   ];
+
+  const onBoost = async (days: number) => {
+    if (!selected) { toast.error("Choisissez une annonce"); return; }
+    setBusy(days);
+    try {
+      const r = await boost({ data: { listingId: selected, durationDays: days, paymentMethod: "manual" } });
+      toast.success(`Boost activé jusqu'au ${new Date(r.premium_until).toLocaleDateString("fr-FR")}`);
+    } catch (e: any) {
+      toast.error(e.message ?? "Erreur");
+    } finally {
+      setBusy(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="rounded-2xl bg-gradient-to-r from-emerald-600 via-emerald-500 to-amber-500 p-6 text-white shadow-sm">
@@ -316,7 +343,25 @@ function Boost() {
         <h2 className="mt-3 font-display text-2xl">Boostez votre visibilité</h2>
         <p className="mt-1 text-sm text-white/90">Multipliez vos ventes en mettant vos créations en avant.</p>
       </div>
-      <div className="grid gap-4 lg:grid-cols-3">
+
+      {listings.length === 0 ? (
+        <div className="rounded-2xl bg-white p-6 ring-1 ring-slate-200 text-center text-sm text-slate-500">
+          Publiez d'abord une annonce pour la booster.
+        </div>
+      ) : (
+        <div className="rounded-2xl bg-white p-5 ring-1 ring-slate-200">
+          <label className="block text-xs font-medium uppercase tracking-wider text-slate-600 mb-2">Annonce à booster</label>
+          <select value={selected} onChange={(e) => setSelected(e.target.value)} className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm">
+            {listings.map((l) => (
+              <option key={l.id} value={l.id}>
+                {l.title} {l.is_premium ? "★" : ""}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {plans.map((p) => (
           <div key={p.name} className={`relative rounded-2xl bg-white p-6 shadow-sm ring-1 ${p.accent}`}>
             {p.popular && (
@@ -325,8 +370,8 @@ function Boost() {
               </span>
             )}
             <h3 className="font-display text-xl">{p.name}</h3>
-            <p className="mt-2"><span className="font-display text-3xl">{p.price}</span> <span className="text-sm text-slate-500">FCFA</span></p>
-            <p className="text-xs text-slate-500">pour {p.duration}</p>
+            <p className="mt-2"><span className="font-display text-3xl">{p.price.toLocaleString()}</span> <span className="text-sm text-slate-500">FCFA</span></p>
+            <p className="text-xs text-slate-500">pour {p.days} jour{p.days > 1 ? "s" : ""}</p>
             <ul className="mt-4 space-y-2 text-sm">
               {p.features.map((f) => (
                 <li key={f} className="flex items-start gap-2">
@@ -335,12 +380,18 @@ function Boost() {
                 </li>
               ))}
             </ul>
-            <button className={`mt-5 w-full rounded-full py-2.5 text-sm font-medium transition ${p.popular ? "bg-amber-500 text-white hover:bg-amber-600" : "bg-slate-900 text-white hover:bg-slate-800"}`}>
+            <button
+              onClick={() => onBoost(p.days)}
+              disabled={!selected || busy !== null}
+              className={`mt-5 w-full inline-flex items-center justify-center gap-2 rounded-full py-2.5 text-sm font-medium transition disabled:opacity-60 ${p.popular ? "bg-amber-500 text-white hover:bg-amber-600" : "bg-slate-900 text-white hover:bg-slate-800"}`}
+            >
+              {busy === p.days ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
               Activer {p.name}
             </button>
           </div>
         ))}
       </div>
+      <p className="text-xs text-slate-500 text-center">💡 Paiement actuellement en mode manuel — la boost est activée immédiatement pour validation. Brancher Stripe / Wave plus tard.</p>
     </div>
   );
 }
