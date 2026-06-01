@@ -75,7 +75,7 @@ export const moderateListing = createServerFn({ method: "POST" })
     if (data.action === "delete") {
       const { error } = await supabase.from("listings").delete().eq("id", data.listingId);
       if (error) throw new Error(error.message);
-      await supabase.from("notifications").insert({
+      await supabaseAdmin.from("notifications").insert({
         user_id: listing.couturier_id,
         type: "listing_deleted",
         title: "Annonce supprimée",
@@ -107,7 +107,7 @@ export const moderateListing = createServerFn({ method: "POST" })
     const { error } = await supabase.from("listings").update(patch).eq("id", data.listingId);
     if (error) throw new Error(error.message);
 
-    await supabase.from("notifications").insert({
+    await supabaseAdmin.from("notifications").insert({
       user_id: listing.couturier_id,
       type: `listing_${data.action}d`,
       title: notifTitle,
