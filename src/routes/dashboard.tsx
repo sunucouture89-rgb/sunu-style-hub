@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { boostListing } from "@/lib/listings.functions";
+import { ShopEditor } from "@/components/ShopEditor";
 import {
   LayoutDashboard,
   Package,
@@ -21,6 +22,7 @@ import {
   Check,
   Sparkles,
   Loader2,
+  Store,
 } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard")({
