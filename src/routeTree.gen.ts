@@ -19,6 +19,7 @@ import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as AnnoncesRouteImport } from './routes/annonces'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ShopSlugRouteImport } from './routes/shop.$slug'
 import { Route as AnnoncesIdRouteImport } from './routes/annonces.$id'
 import { Route as DashboardListingsNewRouteImport } from './routes/dashboard.listings.new'
 import { Route as ApiPublicHooksExpirePremiumRouteImport } from './routes/api/public/hooks/expire-premium'
@@ -73,6 +74,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ShopSlugRoute = ShopSlugRouteImport.update({
+  id: '/shop/$slug',
+  path: '/shop/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AnnoncesIdRoute = AnnoncesIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -102,6 +108,7 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/uploads': typeof UploadsRoute
   '/annonces/$id': typeof AnnoncesIdRoute
+  '/shop/$slug': typeof ShopSlugRoute
   '/dashboard/listings/new': typeof DashboardListingsNewRoute
   '/api/public/hooks/expire-premium': typeof ApiPublicHooksExpirePremiumRoute
 }
@@ -117,6 +124,7 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/uploads': typeof UploadsRoute
   '/annonces/$id': typeof AnnoncesIdRoute
+  '/shop/$slug': typeof ShopSlugRoute
   '/dashboard/listings/new': typeof DashboardListingsNewRoute
   '/api/public/hooks/expire-premium': typeof ApiPublicHooksExpirePremiumRoute
 }
@@ -133,6 +141,7 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/uploads': typeof UploadsRoute
   '/annonces/$id': typeof AnnoncesIdRoute
+  '/shop/$slug': typeof ShopSlugRoute
   '/dashboard/listings/new': typeof DashboardListingsNewRoute
   '/api/public/hooks/expire-premium': typeof ApiPublicHooksExpirePremiumRoute
 }
@@ -150,6 +159,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/uploads'
     | '/annonces/$id'
+    | '/shop/$slug'
     | '/dashboard/listings/new'
     | '/api/public/hooks/expire-premium'
   fileRoutesByTo: FileRoutesByTo
@@ -165,6 +175,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/uploads'
     | '/annonces/$id'
+    | '/shop/$slug'
     | '/dashboard/listings/new'
     | '/api/public/hooks/expire-premium'
   id:
@@ -180,6 +191,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/uploads'
     | '/annonces/$id'
+    | '/shop/$slug'
     | '/dashboard/listings/new'
     | '/api/public/hooks/expire-premium'
   fileRoutesById: FileRoutesById
@@ -195,6 +207,7 @@ export interface RootRouteChildren {
   RegisterRoute: typeof RegisterRoute
   SignupRoute: typeof SignupRoute
   UploadsRoute: typeof UploadsRoute
+  ShopSlugRoute: typeof ShopSlugRoute
   ApiPublicHooksExpirePremiumRoute: typeof ApiPublicHooksExpirePremiumRoute
 }
 
@@ -270,6 +283,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/shop/$slug': {
+      id: '/shop/$slug'
+      path: '/shop/$slug'
+      fullPath: '/shop/$slug'
+      preLoaderRoute: typeof ShopSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/annonces/$id': {
       id: '/annonces/$id'
       path: '/$id'
@@ -329,6 +349,7 @@ const rootRouteChildren: RootRouteChildren = {
   RegisterRoute: RegisterRoute,
   SignupRoute: SignupRoute,
   UploadsRoute: UploadsRoute,
+  ShopSlugRoute: ShopSlugRoute,
   ApiPublicHooksExpirePremiumRoute: ApiPublicHooksExpirePremiumRoute,
 }
 export const routeTree = rootRouteImport

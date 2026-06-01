@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { boostListing } from "@/lib/listings.functions";
+import { ShopEditor } from "@/components/ShopEditor";
 import {
   LayoutDashboard,
   Package,
@@ -21,6 +22,7 @@ import {
   Check,
   Sparkles,
   Loader2,
+  Store,
 } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard")({
@@ -31,7 +33,7 @@ export const Route = createFileRoute("/dashboard")({
   ),
 });
 
-type Tab = "overview" | "listings" | "orders" | "payments" | "boost";
+type Tab = "overview" | "shop" | "listings" | "orders" | "payments" | "boost";
 
 function DashboardPage() {
   const { user, roles, loading } = useAuth();
@@ -58,6 +60,7 @@ function DashboardPage() {
 
   const navItems: { id: Tab; label: string; icon: any }[] = [
     { id: "overview", label: "Vue d'ensemble", icon: LayoutDashboard },
+    { id: "shop", label: "Ma boutique", icon: Store },
     { id: "listings", label: "Annonces", icon: Package },
     { id: "orders", label: "Commandes", icon: ShoppingCart },
     { id: "payments", label: "Paiements", icon: Wallet },
@@ -122,6 +125,7 @@ function DashboardPage() {
           {tab === "overview" && (
             <Overview revenue={revenue} pending={pending} totalViews={totalViews} listingsCount={listings.length} />
           )}
+          {tab === "shop" && <ShopEditor userId={user.id} />}
           {tab === "listings" && <Listings listings={listings} />}
           {tab === "orders" && <Orders orders={orders} />}
           {tab === "payments" && <Payments revenue={revenue} orders={orders} />}

@@ -182,6 +182,7 @@ export type Database = {
           premium_until: string | null
           price_xof: number
           rejection_reason: string | null
+          shop_id: string | null
           status: Database["public"]["Enums"]["listing_status"]
           stock: number
           tags: string[]
@@ -208,6 +209,7 @@ export type Database = {
           premium_until?: string | null
           price_xof: number
           rejection_reason?: string | null
+          shop_id?: string | null
           status?: Database["public"]["Enums"]["listing_status"]
           stock?: number
           tags?: string[]
@@ -234,6 +236,7 @@ export type Database = {
           premium_until?: string | null
           price_xof?: number
           rejection_reason?: string | null
+          shop_id?: string | null
           status?: Database["public"]["Enums"]["listing_status"]
           stock?: number
           tags?: string[]
@@ -242,7 +245,15 @@ export type Database = {
           views_count?: number
           whatsapp_number?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "listings_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       messages: {
         Row: {
@@ -484,6 +495,116 @@ export type Database = {
           },
         ]
       }
+      shop_followers: {
+        Row: {
+          created_at: string
+          shop_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          shop_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          shop_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_followers_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shops: {
+        Row: {
+          address: string | null
+          city: string | null
+          country: string | null
+          couturier_id: string
+          cover_url: string | null
+          created_at: string
+          description: string | null
+          email: string | null
+          facebook: string | null
+          followers_count: number
+          id: string
+          instagram: string | null
+          is_active: boolean
+          is_verified: boolean
+          logo_url: string | null
+          name: string
+          phone: string | null
+          rating_avg: number
+          rating_count: number
+          slug: string
+          tagline: string | null
+          tiktok: string | null
+          updated_at: string
+          website: string | null
+          whatsapp: string | null
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          country?: string | null
+          couturier_id: string
+          cover_url?: string | null
+          created_at?: string
+          description?: string | null
+          email?: string | null
+          facebook?: string | null
+          followers_count?: number
+          id?: string
+          instagram?: string | null
+          is_active?: boolean
+          is_verified?: boolean
+          logo_url?: string | null
+          name: string
+          phone?: string | null
+          rating_avg?: number
+          rating_count?: number
+          slug: string
+          tagline?: string | null
+          tiktok?: string | null
+          updated_at?: string
+          website?: string | null
+          whatsapp?: string | null
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          country?: string | null
+          couturier_id?: string
+          cover_url?: string | null
+          created_at?: string
+          description?: string | null
+          email?: string | null
+          facebook?: string | null
+          followers_count?: number
+          id?: string
+          instagram?: string | null
+          is_active?: boolean
+          is_verified?: boolean
+          logo_url?: string | null
+          name?: string
+          phone?: string | null
+          rating_avg?: number
+          rating_count?: number
+          slug?: string
+          tagline?: string | null
+          tiktok?: string | null
+          updated_at?: string
+          website?: string | null
+          whatsapp?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -510,6 +631,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      gen_shop_slug: { Args: { _base: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
