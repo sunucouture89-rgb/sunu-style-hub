@@ -126,10 +126,7 @@ function ShopPage() {
 
       <div className="mx-auto max-w-6xl px-4 lg:px-8">
         {/* Header card */}
-        <motion.div
-          initial={{ y: 30, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.4 }}
+        <div
           className="-mt-16 flex flex-col gap-4 rounded-3xl bg-white p-6 shadow-lg ring-1 ring-slate-200 sm:-mt-20 sm:flex-row sm:items-end"
         >
           <div className="relative -mt-16 h-28 w-28 shrink-0 overflow-hidden rounded-2xl bg-slate-100 ring-4 ring-white sm:-mt-20 sm:h-32 sm:w-32">
