@@ -1,45 +1,55 @@
+# Marketplace multi-vendeurs Sunu Couture
 
-# Module Annonces — Plan par phases
+Le projet a déjà : annonces (`listings`), images/vidéos, favoris, conversations, notifications, premium + boost, admin/modération, IA. On va **étendre** cette base au lieu de la reconstruire.
 
-Le projet a déjà beaucoup de briques en place : table `listings` + `listing_images`, upload R2 (`R2Uploader`), formulaire `/dashboard/listings/new`, favoris, reviews, conversations, rôles (`couturier` / `client` / `admin`), buckets publics. Plutôt que tout réécrire d'un coup (≈ 30 écrans + admin + IA + paiement premium), je propose **6 phases livrables**. Tu choisis par où on commence.
+## Phase 1 — Boutiques (Shops)
+**Backend**
+- Nouvelle table `shops` (un par couturier) : `slug` unique, `name`, `tagline`, `description`, `logo_url`, `cover_url`, `whatsapp`, `phone`, `city`, `country`, `address`, `instagram`, `tiktok`, `facebook`, `is_verified`, `is_active`, `followers_count`, `rating_avg`, `rating_count`.
+- Table `shop_followers (shop_id, user_id)`.
+- Lier `listings.shop_id` (FK), backfill auto pour les annonces existantes.
+- Trigger `handle_new_user` étendu : crée une boutique vide quand le rôle est `couturier`.
+- RLS : lecture publique des shops actifs, écriture propriétaire, admin override. GRANT corrects.
 
----
+**Frontend**
+- Route publique `/shop/$slug` : bannière, logo, badge vérifié, stats (produits, followers, note), bouton WhatsApp + Suivre, grille des produits, onglets À propos / Avis.
+- Dashboard couturier : nouvel onglet **Ma boutique** (édition logo/cover/desc/réseaux/contact, upload R2 via bucket `listings`).
+- Carte boutique réutilisable (sur homepage et résultats annonces).
 
-## Phase 1 — Catalogue & catégories (fondations)
-- Étendre `listings` : `gender`, `stock`, `tags text[]`, `whatsapp_number`, `delivery_available`, `is_premium` (existe), `premium_until` (existe), `status` (existe, ajout `pending`/`rejected` pour modération).
-- Nouvelle table `ad_videos` (les images existent déjà dans `listing_images`).
-- Table `categories` figée (seed des 10 catégories demandées : Boubou Homme, Boubou Femme, Grand Boubou, Robes Africaines, Mariage, Broderie, Enfants, Chaussures, Accessoires, Luxe).
-- Étendre `/dashboard/listings/new` avec tous les champs manquants (genre, stock, tags, WhatsApp, livraison).
+## Phase 2 — Catalogue produit enrichi
+- Étendre `listings` : `sale_price_xof`, `sizes text[]`, `colors text[]`, `sku`, `is_active` (déjà via status).
+- Action **dupliquer** une annonce dans le dashboard.
+- Catégories : seed des nouvelles (Grand Boubou, Mariage, Broderie, Enfants, Chaussures, Accessoires, Luxe) en complétant `categories`.
+- Filtres avancés sur `/annonces` (taille, couleur, prix, livraison).
 
-## Phase 2 — Découverte publique
-- Route `/annonces` : grille de cartes premium (image, badge premium, badge vérifié, prix, ville, favori, bouton WhatsApp, quick view au hover).
-- Filtres : catégorie, ville, fourchette de prix, premium only, vérifié, tri (récent / populaire / prix).
-- Route `/annonces/$id` : galerie zoom, vidéo, profil couturier, avis, produits liés, partage, signaler, favoris, CTA WhatsApp + chat in-app.
-- SEO par route : `head()` dynamique, JSON-LD `Product`, sitemap.
+## Phase 3 — Commandes & ventes
+- Étendre `orders` : enum `order_status` (`pending, confirmed, in_production, ready, shipped, delivered, cancelled`), `tracking_number`, `shipping_city`, totaux.
+- Table `order_items` (qté, size, color, prix unitaire) — passage multi-lignes.
+- Tunnel achat depuis fiche produit (formulaire mesures + adresse).
+- Dashboard couturier onglet **Commandes** : liste, détail, transition de statut, notifications auto au client.
+- Facture PDF générée côté server fn (HTML→PDF via template simple).
 
-## Phase 3 — Premium & boost
-- UI choix de durée (1j / 7j / 30j) sur la page annonce.
-- Server fn `boostListing` qui met `is_premium=true` + `premium_until`.
-- Slider premium en homepage, tri "premium d'abord", glow CSS, label sponsorisé, expiration auto (cron `/api/public/cron/expire-premium`).
-- **Paiement** : à confirmer — Stripe ? Wave / Orange Money via redirection ? Pour l'instant je peux poser le flux sans encaissement réel.
+## Phase 4 — Abonnements Shop (Basic/Premium/VIP)
+- Table `shop_subscriptions` (`shop_id`, `plan`, `started_at`, `expires_at`, `status`).
+- Enum `shop_plan ('basic','premium','vip')`. `basic` = défaut (20 produits max → vérification à l'INSERT via trigger).
+- `premium` = produits illimités, badge, visibilité homepage. `vip` = bannière home + classement prioritaire + stats avancées.
+- UI : page **Tarifs**, activation manuelle (paiement Wave/Orange Money en hors-ligne pour v1), historique dans dashboard.
+- Cron quotidien (réutilise `/api/public/hooks/expire-premium`) pour expirer les plans.
 
-## Phase 4 — Mobile & notifications
-- UX mobile type Jumia : swipe galerie, FAB WhatsApp sticky, sheet de filtres.
-- Notifications in-app (`notifications` table existe) : nouveau message, favori reçu, premium qui expire, annonce approuvée/rejetée.
+## Phase 5 — Homepage marketplace & social
+- Sections : Couturiers à la une (VIP), Boutiques Premium, Derniers produits, Meilleures ventes (à partir des commandes livrées), Top notes.
+- Suivre / Se désabonner d'une boutique + notifications nouveaux produits.
+- Page **Favoris** consolidée (déjà partielle).
 
-## Phase 5 — Admin & modération
-- Route `/admin` protégée par `has_role(..., 'admin')` : liste des annonces `pending`, boutons approuver / rejeter / mettre en avant / supprimer, vue des transactions premium.
+## Phase 6 — Admin étendu & PWA
+- Admin : onglets Boutiques (approuver/vérifier/suspendre), Abonnements, Commissions (% configurable, vue revenus).
+- Statistiques marketplace globales (GMV, top shops, conversion).
+- PWA installable : `manifest.json` + icônes, **sans service worker** (per règle du projet — pas d'offline).
 
-## Phase 6 — IA (Lovable AI Gateway, gratuit)
-- À la soumission d'une annonce : `gemini-2.5-flash` → score spam + suggestions de tags + amélioration de description.
-- Workflow : suggéré au couturier, jamais appliqué automatiquement.
+## Stack & règles
+- Server functions TanStack (`createServerFn`) — pas d'Edge Functions.
+- Stockage : buckets `listings` (déjà public) pour produits/boutiques ; nouveau bucket `shops` si besoin pour logos/covers — sinon sous-dossier `shops/{id}/`.
+- RLS strict + GRANTs sur chaque nouvelle table.
+- Design system existant (tokens `src/styles.css`), Framer Motion déjà installé.
 
----
-
-## Questions avant de coder
-
-1. **On commence par quelle phase ?** (recommandation : Phase 1 + 2 ensemble pour avoir un catalogue public utilisable)
-2. **Paiement premium** : Stripe maintenant, ou flux "manuel / à brancher plus tard" ?
-3. **Modération** : annonces visibles immédiatement (statut `active`) ou file d'attente `pending` à approuver par un admin ?
-
-Réponds par ex. *"Phase 1+2, paiement plus tard, publication immédiate"* et j'implémente dans la foulée.
+## Question avant de démarrer
+Par quoi commencer ? Je recommande **Phase 1 (Boutiques)** seule dans le prochain tour — c'est le socle qui débloque tout le reste, et c'est déjà ~1 migration + 3 fichiers UI. Les phases suivantes viendront ensuite, une par tour, pour rester contrôlable.
