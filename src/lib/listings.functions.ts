@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 // ----- Premium boost -----
 const BOOST_PRICES: Record<number, number> = { 1: 500, 7: 2500, 30: 7500, 90: 20000 };
