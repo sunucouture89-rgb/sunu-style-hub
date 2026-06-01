@@ -33,7 +33,7 @@ export const Route = createFileRoute("/dashboard")({
   ),
 });
 
-type Tab = "overview" | "listings" | "orders" | "payments" | "boost";
+type Tab = "overview" | "shop" | "listings" | "orders" | "payments" | "boost";
 
 function DashboardPage() {
   const { user, roles, loading } = useAuth();
