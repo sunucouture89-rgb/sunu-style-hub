@@ -97,13 +97,13 @@ function ShopPage() {
     if (following) {
       await supabase.from("shop_followers").delete().eq("shop_id", shop.id).eq("user_id", user.id);
       setFollowing(false);
-      setFollowers((n) => Math.max(0, n - 1));
+      setFollowers((n: number) => Math.max(0, n - 1));
     } else {
       const { error } = await supabase.from("shop_followers").insert({ shop_id: shop.id, user_id: user.id });
       if (error) toast.error(error.message);
       else {
         setFollowing(true);
-        setFollowers((n) => n + 1);
+        setFollowers((n: number) => n + 1);
         toast.success(`Vous suivez ${shop.name}`);
       }
     }
