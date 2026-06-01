@@ -37,10 +37,7 @@ export function SignupPage() {
       setLoading(false);
       return toast.error(error.message);
     }
-    // If signed up couturier, also insert role explicitly (in case meta missed)
-    if (data.user) {
-      await supabase.from("user_roles").upsert({ user_id: data.user.id, role }, { onConflict: "user_id,role" });
-    }
+    // Role is assigned by the handle_new_user trigger from signUp metadata.
     setLoading(false);
     toast.success(data.session ? "Bienvenue ! Compte créé." : "Compte créé. Vérifiez votre email pour vous connecter.");
     navigate({ to: data.session ? resolveAuthRedirect(search.redirect, [role]) : "/login", search: { redirect: resolveAuthRedirect(search.redirect, [role]) } });
