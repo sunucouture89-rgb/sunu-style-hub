@@ -60,6 +60,7 @@ function DashboardPage() {
 
   const navItems: { id: Tab; label: string; icon: any }[] = [
     { id: "overview", label: "Vue d'ensemble", icon: LayoutDashboard },
+    { id: "shop", label: "Ma boutique", icon: Store },
     { id: "listings", label: "Annonces", icon: Package },
     { id: "orders", label: "Commandes", icon: ShoppingCart },
     { id: "payments", label: "Paiements", icon: Wallet },
