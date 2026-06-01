@@ -125,6 +125,7 @@ function DashboardPage() {
           {tab === "overview" && (
             <Overview revenue={revenue} pending={pending} totalViews={totalViews} listingsCount={listings.length} />
           )}
+          {tab === "shop" && <ShopEditor userId={user.id} />}
           {tab === "listings" && <Listings listings={listings} />}
           {tab === "orders" && <Orders orders={orders} />}
           {tab === "payments" && <Payments revenue={revenue} orders={orders} />}
