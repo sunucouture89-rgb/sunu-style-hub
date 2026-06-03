@@ -221,6 +221,7 @@ function Listings({ listings }: { listings: any[] }) {
                 <th className="py-3">Prix</th>
                 <th className="py-3">Vues</th>
                 <th className="py-3">Statut</th>
+                <th className="py-3 text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -233,6 +234,15 @@ function Listings({ listings }: { listings: any[] }) {
                     <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
                       {l.status ?? "active"}
                     </span>
+                  </td>
+                  <td className="py-3 text-right">
+                    <Link
+                      to="/dashboard/listings/$id/media"
+                      params={{ id: l.id }}
+                      className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-700 hover:border-emerald-500 hover:text-emerald-700"
+                    >
+                      Médias
+                    </Link>
                   </td>
                 </tr>
               ))}
