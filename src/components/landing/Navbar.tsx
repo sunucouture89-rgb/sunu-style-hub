@@ -94,15 +94,14 @@ export function Navbar() {
               </button>
               {menuOpen && (
                 <div className="absolute right-0 mt-2 w-56 overflow-hidden rounded-xl border border-border bg-popover shadow-luxe">
-                  {isCouturier && (
-                    <Link
-                      to="/dashboard"
-                      onClick={() => setMenuOpen(false)}
-                      className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-secondary"
-                    >
-                      <LayoutDashboard className="h-4 w-4" /> Tableau de bord
-                    </Link>
-                  )}
+                  <Link
+                    to="/dashboard"
+                    onClick={() => setMenuOpen(false)}
+                    className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-secondary"
+                  >
+                    <LayoutDashboard className="h-4 w-4" /> {isCouturier ? "Ma boutique" : "Devenir couturier"}
+                  </Link>
+
                   <Link to="/messages" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-secondary">
                     <MessageCircle className="h-4 w-4" /> Messages
                   </Link>
@@ -142,11 +141,10 @@ export function Navbar() {
               </div>
             ) : (
               <div className="mt-2 grid gap-2">
-                {isCouturier && (
-                  <Link to="/dashboard" className="rounded-full bg-primary px-4 py-2.5 text-center text-sm text-primary-foreground">
-                    Tableau de bord
-                  </Link>
-                )}
+                <Link to="/dashboard" className="rounded-full bg-primary px-4 py-2.5 text-center text-sm text-primary-foreground">
+                  {isCouturier ? "Ma boutique" : "Devenir couturier"}
+                </Link>
+
                 <Link to="/messages" className="rounded-full border border-border px-4 py-2.5 text-center text-sm">
                   Messages
                 </Link>
