@@ -22,6 +22,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ShopSlugRouteImport } from './routes/shop.$slug'
 import { Route as AnnoncesIdRouteImport } from './routes/annonces.$id'
 import { Route as DashboardListingsNewRouteImport } from './routes/dashboard.listings.new'
+import { Route as DashboardListingsIdMediaRouteImport } from './routes/dashboard.listings.$id.media'
 import { Route as ApiPublicHooksExpirePremiumRouteImport } from './routes/api/public/hooks/expire-premium'
 
 const UploadsRoute = UploadsRouteImport.update({
@@ -89,6 +90,12 @@ const DashboardListingsNewRoute = DashboardListingsNewRouteImport.update({
   path: '/listings/new',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardListingsIdMediaRoute =
+  DashboardListingsIdMediaRouteImport.update({
+    id: '/listings/$id/media',
+    path: '/listings/$id/media',
+    getParentRoute: () => DashboardRoute,
+  } as any)
 const ApiPublicHooksExpirePremiumRoute =
   ApiPublicHooksExpirePremiumRouteImport.update({
     id: '/api/public/hooks/expire-premium',
@@ -111,6 +118,7 @@ export interface FileRoutesByFullPath {
   '/shop/$slug': typeof ShopSlugRoute
   '/dashboard/listings/new': typeof DashboardListingsNewRoute
   '/api/public/hooks/expire-premium': typeof ApiPublicHooksExpirePremiumRoute
+  '/dashboard/listings/$id/media': typeof DashboardListingsIdMediaRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -127,6 +135,7 @@ export interface FileRoutesByTo {
   '/shop/$slug': typeof ShopSlugRoute
   '/dashboard/listings/new': typeof DashboardListingsNewRoute
   '/api/public/hooks/expire-premium': typeof ApiPublicHooksExpirePremiumRoute
+  '/dashboard/listings/$id/media': typeof DashboardListingsIdMediaRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -144,6 +153,7 @@ export interface FileRoutesById {
   '/shop/$slug': typeof ShopSlugRoute
   '/dashboard/listings/new': typeof DashboardListingsNewRoute
   '/api/public/hooks/expire-premium': typeof ApiPublicHooksExpirePremiumRoute
+  '/dashboard/listings/$id/media': typeof DashboardListingsIdMediaRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -162,6 +172,7 @@ export interface FileRouteTypes {
     | '/shop/$slug'
     | '/dashboard/listings/new'
     | '/api/public/hooks/expire-premium'
+    | '/dashboard/listings/$id/media'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -178,6 +189,7 @@ export interface FileRouteTypes {
     | '/shop/$slug'
     | '/dashboard/listings/new'
     | '/api/public/hooks/expire-premium'
+    | '/dashboard/listings/$id/media'
   id:
     | '__root__'
     | '/'
@@ -194,6 +206,7 @@ export interface FileRouteTypes {
     | '/shop/$slug'
     | '/dashboard/listings/new'
     | '/api/public/hooks/expire-premium'
+    | '/dashboard/listings/$id/media'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -304,6 +317,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardListingsNewRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/listings/$id/media': {
+      id: '/dashboard/listings/$id/media'
+      path: '/listings/$id/media'
+      fullPath: '/dashboard/listings/$id/media'
+      preLoaderRoute: typeof DashboardListingsIdMediaRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/api/public/hooks/expire-premium': {
       id: '/api/public/hooks/expire-premium'
       path: '/api/public/hooks/expire-premium'
@@ -328,10 +348,12 @@ const AnnoncesRouteWithChildren = AnnoncesRoute._addFileChildren(
 
 interface DashboardRouteChildren {
   DashboardListingsNewRoute: typeof DashboardListingsNewRoute
+  DashboardListingsIdMediaRoute: typeof DashboardListingsIdMediaRoute
 }
 
 const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardListingsNewRoute: DashboardListingsNewRoute,
+  DashboardListingsIdMediaRoute: DashboardListingsIdMediaRoute,
 }
 
 const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
