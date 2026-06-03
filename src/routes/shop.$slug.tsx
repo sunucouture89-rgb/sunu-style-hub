@@ -28,17 +28,26 @@ export const Route = createFileRoute("/shop/$slug")({
       .maybeSingle();
     if (error || !shop) throw notFound();
 
-    const { data: listings } = await supabase
-      .from("listings")
-      .select("id, title, price_xof, cover_image_url, city, is_premium, views_count")
-      .eq("couturier_id", shop.couturier_id)
-      .eq("status", "active")
-      .order("is_premium", { ascending: false })
-      .order("created_at", { ascending: false })
-      .limit(60);
+    const [{ data: listings }, { data: media }] = await Promise.all([
+      supabase
+        .from("listings")
+        .select("id, title, price_xof, cover_image_url, city, is_premium, views_count")
+        .eq("couturier_id", shop.couturier_id)
+        .eq("status", "active")
+        .order("is_premium", { ascending: false })
+        .order("created_at", { ascending: false })
+        .limit(60),
+      (supabase as any)
+        .from("shop_media")
+        .select("id, url, kind, caption, position")
+        .eq("shop_id", shop.id)
+        .order("position", { ascending: true })
+        .limit(60),
+    ]);
 
-    return { shop, listings: listings ?? [] };
+    return { shop, listings: listings ?? [], media: media ?? [] };
   },
+
   head: ({ loaderData }) => {
     const shop = loaderData?.shop;
     if (!shop) return { meta: [{ title: "Boutique introuvable — Sunu Couture" }] };
@@ -71,11 +80,13 @@ export const Route = createFileRoute("/shop/$slug")({
 });
 
 function ShopPage() {
-  const { shop, listings } = Route.useLoaderData();
+  const { shop, listings, media } = Route.useLoaderData();
   const { user } = useAuth();
+  const isOwner = user?.id === shop.couturier_id;
   const [following, setFollowing] = useState(false);
   const [followers, setFollowers] = useState(shop.followers_count);
   const [busy, setBusy] = useState(false);
+
 
   useEffect(() => {
     if (!user) return;
