@@ -156,8 +156,10 @@ function DashboardPage() {
           {tab === "boost" && <Boost listings={listings} />}
         </main>
       </div>
+      <OnboardingTour onJump={(t) => setTab(t)} />
     </div>
   );
+
 }
 
 function StatCard({ label, value, icon: Icon, accent }: any) {
