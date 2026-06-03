@@ -7,6 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { boostListing } from "@/lib/listings.functions";
 import { ShopEditor } from "@/components/ShopEditor";
+import { OnboardingTour } from "@/components/OnboardingTour";
+
 import {
   LayoutDashboard,
   Package,
@@ -36,10 +38,22 @@ export const Route = createFileRoute("/dashboard")({
 type Tab = "overview" | "shop" | "listings" | "orders" | "payments" | "boost";
 
 function DashboardPage() {
-  const { user, roles, loading } = useAuth();
+  const { user, roles, loading, refreshRoles } = useAuth();
   const [tab, setTab] = useState<Tab>("overview");
   const [listings, setListings] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
+  const [requesting, setRequesting] = useState(false);
+
+  const requestCouturier = async () => {
+    setRequesting(true);
+    const { error } = await (supabase as any).rpc("become_couturier", { _display_name: null });
+    setRequesting(false);
+    if (error) return toast.error(error.message);
+    toast.success("Rôle couturier activé — bienvenue !");
+    await refreshRoles();
+    setTab("shop");
+  };
+
 
   useEffect(() => {
     if (!user) return;
@@ -98,10 +112,20 @@ function DashboardPage() {
               })}
             </nav>
             {!roles.includes("couturier") && (
-              <div className="mt-4 rounded-xl bg-amber-50 p-3 text-xs text-amber-800 ring-1 ring-amber-200">
-                Votre compte n'a pas encore le rôle couturier.
+              <div className="mt-4 space-y-2 rounded-xl bg-amber-50 p-3 text-xs text-amber-900 ring-1 ring-amber-200">
+                <p className="font-medium">Rôle couturier non attribué</p>
+                <p>Activez votre boutique en un clic pour qu'« Ma boutique » apparaisse.</p>
+                <button
+                  onClick={requestCouturier}
+                  disabled={requesting}
+                  className="inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-amber-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-700 disabled:opacity-60"
+                >
+                  {requesting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                  Demander la validation
+                </button>
               </div>
             )}
+
           </div>
         </aside>
 
@@ -132,8 +156,10 @@ function DashboardPage() {
           {tab === "boost" && <Boost listings={listings} />}
         </main>
       </div>
+      <OnboardingTour onJump={(t) => setTab(t)} />
     </div>
   );
+
 }
 
 function StatCard({ label, value, icon: Icon, accent }: any) {

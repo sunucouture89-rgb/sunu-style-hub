@@ -13,6 +13,7 @@ import {
   Globe,
   Music2,
   Facebook,
+  ImagePlus,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -28,17 +29,26 @@ export const Route = createFileRoute("/shop/$slug")({
       .maybeSingle();
     if (error || !shop) throw notFound();
 
-    const { data: listings } = await supabase
-      .from("listings")
-      .select("id, title, price_xof, cover_image_url, city, is_premium, views_count")
-      .eq("couturier_id", shop.couturier_id)
-      .eq("status", "active")
-      .order("is_premium", { ascending: false })
-      .order("created_at", { ascending: false })
-      .limit(60);
+    const [{ data: listings }, { data: media }] = await Promise.all([
+      supabase
+        .from("listings")
+        .select("id, title, price_xof, cover_image_url, city, is_premium, views_count")
+        .eq("couturier_id", shop.couturier_id)
+        .eq("status", "active")
+        .order("is_premium", { ascending: false })
+        .order("created_at", { ascending: false })
+        .limit(60),
+      (supabase as any)
+        .from("shop_media")
+        .select("id, url, kind, caption, position")
+        .eq("shop_id", shop.id)
+        .order("position", { ascending: true })
+        .limit(60),
+    ]);
 
-    return { shop, listings: listings ?? [] };
+    return { shop, listings: listings ?? [], media: media ?? [] };
   },
+
   head: ({ loaderData }) => {
     const shop = loaderData?.shop;
     if (!shop) return { meta: [{ title: "Boutique introuvable — Sunu Couture" }] };
@@ -71,11 +81,13 @@ export const Route = createFileRoute("/shop/$slug")({
 });
 
 function ShopPage() {
-  const { shop, listings } = Route.useLoaderData();
+  const { shop, listings, media } = Route.useLoaderData();
   const { user } = useAuth();
+  const isOwner = user?.id === shop.couturier_id;
   const [following, setFollowing] = useState(false);
   const [followers, setFollowers] = useState(shop.followers_count);
   const [busy, setBusy] = useState(false);
+
 
   useEffect(() => {
     if (!user) return;
@@ -220,8 +232,53 @@ function ShopPage() {
           </div>
         </div>
 
+        {/* Gallery — photos & videos */}
+        {(media.length > 0 || isOwner) && (
+          <section className="mt-8">
+            <div className="mb-4 flex items-end justify-between">
+              <div>
+                <h2 className="font-display text-2xl">Photos & vidéos</h2>
+                <p className="text-sm text-slate-500">
+                  La galerie personnelle de {shop.name}
+                </p>
+              </div>
+              {isOwner && (
+                <Link
+                  to="/dashboard"
+                  className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
+                >
+                  <ImagePlus className="h-4 w-4" /> Ajouter des médias
+                </Link>
+              )}
+            </div>
+            {media.length === 0 ? (
+              <div className="rounded-2xl bg-white p-8 text-center ring-1 ring-slate-200">
+                <p className="text-sm text-slate-500">
+                  Aucun média dans la galerie pour le moment.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+                {media.map((m: any) => (
+                  <div
+                    key={m.id}
+                    className="group relative aspect-square overflow-hidden rounded-2xl bg-slate-100 ring-1 ring-slate-200"
+                  >
+                    {m.kind === "video" ? (
+                      <video src={m.url} className="h-full w-full object-cover" controls playsInline />
+                    ) : (
+                      <img src={m.url} alt="" className="h-full w-full object-cover transition group-hover:scale-105" />
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
+
         {/* Products */}
         <section className="mt-8 pb-16">
+
           <div className="mb-4 flex items-end justify-between">
             <h2 className="font-display text-2xl">Créations</h2>
             <span className="text-sm text-slate-500">{listings.length} annonce{listings.length > 1 ? "s" : ""}</span>

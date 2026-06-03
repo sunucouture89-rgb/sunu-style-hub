@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Save, Loader2, ExternalLink, BadgeCheck } from "lucide-react";
+import { Save, Loader2, ExternalLink, BadgeCheck, ImagePlus, Sparkles } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { R2Uploader, type R2Asset } from "@/components/R2Uploader";
+import { ShopGallery } from "@/components/ShopGallery";
+import { useAuth } from "@/hooks/use-auth";
 
 type Shop = {
   id: string;
@@ -29,21 +31,36 @@ type Shop = {
 };
 
 export function ShopEditor({ userId }: { userId: string }) {
+  const { refreshRoles } = useAuth();
   const [shop, setShop] = useState<Shop | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [savingMedia, setSavingMedia] = useState(false);
+  const [becoming, setBecoming] = useState(false);
 
-  useEffect(() => {
-    supabase
+  const load = async () => {
+    const { data } = await supabase
       .from("shops")
       .select("*")
       .eq("couturier_id", userId)
-      .maybeSingle()
-      .then(({ data }) => {
-        setShop(data as Shop | null);
-        setLoading(false);
-      });
+      .maybeSingle();
+    setShop(data as Shop | null);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    load();
   }, [userId]);
+
+  const becomeCouturier = async () => {
+    setBecoming(true);
+    const { error } = await (supabase as any).rpc("become_couturier", { _display_name: null });
+    setBecoming(false);
+    if (error) return toast.error(error.message);
+    toast.success("Bienvenue ! Votre boutique a été créée.");
+    await refreshRoles();
+    await load();
+  };
 
   if (loading) {
     return (
@@ -55,13 +72,45 @@ export function ShopEditor({ userId }: { userId: string }) {
 
   if (!shop) {
     return (
-      <div className="rounded-2xl bg-white p-6 ring-1 ring-slate-200 text-sm text-slate-600">
-        Aucune boutique trouvée. Assurez-vous d'avoir le rôle couturier.
+      <div className="rounded-3xl bg-gradient-to-br from-emerald-50 to-amber-50 p-8 ring-1 ring-emerald-200">
+        <div className="mx-auto max-w-lg text-center">
+          <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-emerald-600 text-white">
+            <Sparkles className="h-6 w-6" />
+          </span>
+          <h3 className="mt-4 font-display text-2xl text-slate-900">
+            Activez votre boutique en un clic
+          </h3>
+          <p className="mt-2 text-sm text-slate-600">
+            Votre compte n'a pas encore le rôle <strong>couturier</strong>.
+            Cliquez ci-dessous pour devenir couturier : votre boutique{" "}
+            <em>Ma boutique</em> apparaîtra immédiatement et vous pourrez
+            uploader logo, bannière, photos et vidéos.
+          </p>
+          <button
+            onClick={becomeCouturier}
+            disabled={becoming}
+            className="mt-6 inline-flex items-center gap-2 rounded-full bg-emerald-600 px-6 py-3 text-sm font-medium text-white shadow-sm hover:bg-emerald-700 disabled:opacity-60"
+          >
+            {becoming ? <Loader2 className="h-4 w-4 animate-spin" /> : <BadgeCheck className="h-4 w-4" />}
+            Devenir couturier — créer ma boutique
+          </button>
+        </div>
       </div>
     );
   }
 
   const update = (patch: Partial<Shop>) => setShop({ ...shop, ...patch });
+
+  const saveMedia = async (patch: Partial<Shop>) => {
+    setSavingMedia(true);
+    const { error } = await supabase.from("shops").update(patch).eq("id", shop.id);
+    setSavingMedia(false);
+    if (error) toast.error(error.message);
+    else {
+      setShop({ ...shop, ...patch });
+      toast.success("Photo enregistrée");
+    }
+  };
 
   const onSave = async () => {
     setSaving(true);
@@ -71,8 +120,6 @@ export function ShopEditor({ userId }: { userId: string }) {
         name: shop.name,
         tagline: shop.tagline,
         description: shop.description,
-        logo_url: shop.logo_url,
-        cover_url: shop.cover_url,
         whatsapp: shop.whatsapp,
         phone: shop.phone,
         email: shop.email,
@@ -116,31 +163,80 @@ export function ShopEditor({ userId }: { userId: string }) {
         </Link>
       </div>
 
-      {/* Media */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        <div className="rounded-2xl bg-white p-6 ring-1 ring-slate-200">
-          <p className="mb-2 text-sm font-medium">Logo</p>
-          <R2Uploader
-            folder={`shops/${shop.id}/logo`}
-            accept="image"
-            multiple={false}
-            maxFiles={1}
-            value={logoAssets}
-            onChange={(a) => update({ logo_url: a[0]?.publicUrl ?? null })}
-          />
+      {/* PROFILE PHOTO (logo) */}
+      <div className="rounded-2xl bg-white p-6 ring-1 ring-slate-200">
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <h3 className="font-display text-lg">Photo de profil (logo)</h3>
+            <p className="text-xs text-slate-500">Format carré recommandé · 500×500 px</p>
+          </div>
         </div>
-        <div className="rounded-2xl bg-white p-6 ring-1 ring-slate-200">
-          <p className="mb-2 text-sm font-medium">Bannière</p>
-          <R2Uploader
-            folder={`shops/${shop.id}/cover`}
-            accept="image"
-            multiple={false}
-            maxFiles={1}
-            value={coverAssets}
-            onChange={(a) => update({ cover_url: a[0]?.publicUrl ?? null })}
-          />
+        <div className="grid gap-6 sm:grid-cols-[160px_1fr] sm:items-start">
+          <div className="aspect-square w-40 overflow-hidden rounded-2xl bg-slate-100 ring-1 ring-slate-200">
+            {shop.logo_url ? (
+              <img src={shop.logo_url} alt="Aperçu logo" className="h-full w-full object-cover" />
+            ) : (
+              <div className="grid h-full w-full place-items-center text-3xl font-display text-slate-300">
+                {shop.name.charAt(0)}
+              </div>
+            )}
+          </div>
+          <div className="space-y-3">
+            <R2Uploader
+              folder={`shops/${shop.id}/logo`}
+              accept="image"
+              multiple={false}
+              maxFiles={1}
+              value={logoAssets}
+              onChange={(a) => update({ logo_url: a[0]?.publicUrl ?? null })}
+              label="Glissez votre logo ici"
+            />
+            <button
+              onClick={() => saveMedia({ logo_url: shop.logo_url })}
+              disabled={savingMedia}
+              className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-60"
+            >
+              {savingMedia ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              Enregistrer le logo
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* BANNER (cover) */}
+      <div className="rounded-2xl bg-white p-6 ring-1 ring-slate-200">
+        <div className="mb-4">
+          <h3 className="font-display text-lg">Bannière de la boutique</h3>
+          <p className="text-xs text-slate-500">Image large · 1600×600 px recommandé</p>
+        </div>
+        <div className="mb-4 aspect-[16/6] w-full overflow-hidden rounded-xl bg-gradient-to-br from-emerald-500 to-amber-500 ring-1 ring-slate-200">
+          {shop.cover_url && (
+            <img src={shop.cover_url} alt="Aperçu bannière" className="h-full w-full object-cover" />
+          )}
+        </div>
+        <R2Uploader
+          folder={`shops/${shop.id}/cover`}
+          accept="image"
+          multiple={false}
+          maxFiles={1}
+          value={coverAssets}
+          onChange={(a) => update({ cover_url: a[0]?.publicUrl ?? null })}
+          label="Glissez votre bannière ici"
+        />
+        <div className="mt-3 flex justify-end">
+          <button
+            onClick={() => saveMedia({ cover_url: shop.cover_url })}
+            disabled={savingMedia}
+            className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-60"
+          >
+            {savingMedia ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            Enregistrer la bannière
+          </button>
+        </div>
+      </div>
+
+      {/* GALLERY — photos & videos */}
+      <ShopGallery shopId={shop.id} />
 
       {/* Identity */}
       <div className="rounded-2xl bg-white p-6 ring-1 ring-slate-200 space-y-4">
@@ -180,14 +276,14 @@ export function ShopEditor({ userId }: { userId: string }) {
         </div>
       </div>
 
-      <div className="flex justify-end">
+      <div className="sticky bottom-4 z-10 flex justify-end">
         <button
           onClick={onSave}
           disabled={saving}
-          className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-60"
+          className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-6 py-3 text-sm font-medium text-white shadow-luxe hover:bg-slate-800 disabled:opacity-60"
         >
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-          Enregistrer
+          Enregistrer toutes les infos
         </button>
       </div>
     </div>
