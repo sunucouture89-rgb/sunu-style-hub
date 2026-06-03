@@ -141,11 +141,10 @@ export function Navbar() {
               </div>
             ) : (
               <div className="mt-2 grid gap-2">
-                {isCouturier && (
-                  <Link to="/dashboard" className="rounded-full bg-primary px-4 py-2.5 text-center text-sm text-primary-foreground">
-                    Tableau de bord
-                  </Link>
-                )}
+                <Link to="/dashboard" className="rounded-full bg-primary px-4 py-2.5 text-center text-sm text-primary-foreground">
+                  {isCouturier ? "Ma boutique" : "Devenir couturier"}
+                </Link>
+
                 <Link to="/messages" className="rounded-full border border-border px-4 py-2.5 text-center text-sm">
                   Messages
                 </Link>
