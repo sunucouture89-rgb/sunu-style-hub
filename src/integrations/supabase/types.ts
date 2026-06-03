@@ -521,6 +521,47 @@ export type Database = {
           },
         ]
       }
+      shop_media: {
+        Row: {
+          caption: string | null
+          created_at: string
+          id: string
+          kind: string
+          position: number
+          r2_key: string | null
+          shop_id: string
+          url: string
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          kind: string
+          position?: number
+          r2_key?: string | null
+          shop_id: string
+          url: string
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          position?: number
+          r2_key?: string | null
+          shop_id?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_media_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shops: {
         Row: {
           address: string | null
@@ -631,6 +672,42 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      become_couturier: {
+        Args: { _display_name?: string }
+        Returns: {
+          address: string | null
+          city: string | null
+          country: string | null
+          couturier_id: string
+          cover_url: string | null
+          created_at: string
+          description: string | null
+          email: string | null
+          facebook: string | null
+          followers_count: number
+          id: string
+          instagram: string | null
+          is_active: boolean
+          is_verified: boolean
+          logo_url: string | null
+          name: string
+          phone: string | null
+          rating_avg: number
+          rating_count: number
+          slug: string
+          tagline: string | null
+          tiktok: string | null
+          updated_at: string
+          website: string | null
+          whatsapp: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "shops"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       gen_shop_slug: { Args: { _base: string }; Returns: string }
       has_role: {
         Args: {
