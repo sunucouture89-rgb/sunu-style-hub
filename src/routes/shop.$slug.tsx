@@ -231,8 +231,53 @@ function ShopPage() {
           </div>
         </div>
 
+        {/* Gallery — photos & videos */}
+        {(media.length > 0 || isOwner) && (
+          <section className="mt-8">
+            <div className="mb-4 flex items-end justify-between">
+              <div>
+                <h2 className="font-display text-2xl">Photos & vidéos</h2>
+                <p className="text-sm text-slate-500">
+                  La galerie personnelle de {shop.name}
+                </p>
+              </div>
+              {isOwner && (
+                <Link
+                  to="/dashboard"
+                  className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
+                >
+                  <ImagePlus className="h-4 w-4" /> Ajouter des médias
+                </Link>
+              )}
+            </div>
+            {media.length === 0 ? (
+              <div className="rounded-2xl bg-white p-8 text-center ring-1 ring-slate-200">
+                <p className="text-sm text-slate-500">
+                  Aucun média dans la galerie pour le moment.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+                {media.map((m: any) => (
+                  <div
+                    key={m.id}
+                    className="group relative aspect-square overflow-hidden rounded-2xl bg-slate-100 ring-1 ring-slate-200"
+                  >
+                    {m.kind === "video" ? (
+                      <video src={m.url} className="h-full w-full object-cover" controls playsInline />
+                    ) : (
+                      <img src={m.url} alt="" className="h-full w-full object-cover transition group-hover:scale-105" />
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
+
         {/* Products */}
         <section className="mt-8 pb-16">
+
           <div className="mb-4 flex items-end justify-between">
             <h2 className="font-display text-2xl">Créations</h2>
             <span className="text-sm text-slate-500">{listings.length} annonce{listings.length > 1 ? "s" : ""}</span>
