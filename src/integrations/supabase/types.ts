@@ -646,6 +646,48 @@ export type Database = {
         }
         Relationships: []
       }
+      upload_failures: {
+        Row: {
+          content_type: string | null
+          created_at: string
+          error: string | null
+          file_name: string | null
+          file_size: number | null
+          folder: string | null
+          id: string
+          request_id: string | null
+          status_code: number | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          content_type?: string | null
+          created_at?: string
+          error?: string | null
+          file_name?: string | null
+          file_size?: number | null
+          folder?: string | null
+          id?: string
+          request_id?: string | null
+          status_code?: number | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          content_type?: string | null
+          created_at?: string
+          error?: string | null
+          file_name?: string | null
+          file_size?: number | null
+          folder?: string | null
+          id?: string
+          request_id?: string | null
+          status_code?: number | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
