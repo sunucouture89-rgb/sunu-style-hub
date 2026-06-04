@@ -75,9 +75,17 @@ function AdminPage() {
     <main className="min-h-screen bg-slate-50 text-slate-900">
       <Navbar />
       <div className="mx-auto max-w-6xl px-6 pt-28 pb-16 space-y-8">
-        <header>
-          <h1 className="font-display text-4xl">Modération</h1>
-          <p className="mt-1 text-sm text-slate-500">Approuvez, refusez ou mettez en avant les annonces du marketplace.</p>
+        <header className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 className="font-display text-4xl">Modération</h1>
+            <p className="mt-1 text-sm text-slate-500">Approuvez, refusez ou mettez en avant les annonces du marketplace.</p>
+          </div>
+          <Link
+            to="/admin/uploads"
+            className="rounded-full bg-slate-900 px-4 py-2 text-xs font-medium text-white hover:bg-slate-800"
+          >
+            Uploads échoués →
+          </Link>
         </header>
 
         <Stats pending={pending.length} active={recent.filter((r: any) => r.status === "active").length} premium={recent.filter((r: any) => r.is_premium).length} revenue={tx.reduce((s: number, t: any) => s + (t.amount_xof || 0), 0)} />

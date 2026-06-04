@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Loader2, Star, Trash2, ArrowUp, ArrowDown, Image as ImageIcon, Film } from "lucide-react";
+import { Loader2, Star, Trash2, Image as ImageIcon, Film, GripVertical } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { R2Uploader, type R2Asset } from "@/components/R2Uploader";
 import { deleteR2Object } from "@/lib/r2.functions";
@@ -17,7 +17,6 @@ type MediaRow = {
 function r2KeyFromUrl(url: string): string | null {
   const base = (import.meta as any).env?.VITE_R2_PUBLIC_URL as string | undefined;
   if (base && url.startsWith(base)) return url.slice(base.replace(/\/+$/, "").length + 1);
-  // fallback: take everything after the host
   try {
     const u = new URL(url);
     return u.pathname.replace(/^\/+/, "");
@@ -31,6 +30,7 @@ export function MediaManager({ listingId }: { listingId: string }) {
   const [items, setItems] = useState<MediaRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [savingCover, setSavingCover] = useState(false);
+  const [dragKey, setDragKey] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -62,16 +62,18 @@ export function MediaManager({ listingId }: { listingId: string }) {
     );
   };
 
-  const move = async (row: MediaRow, dir: -1 | 1) => {
-    const list = (row.kind === "image" ? images : videos).slice();
-    const idx = list.findIndex((x) => x.id === row.id);
-    const swap = idx + dir;
-    if (swap < 0 || swap >= list.length) return;
-    [list[idx], list[swap]] = [list[swap], list[idx]];
-    setItems((prev) => [...prev.filter((x) => x.kind !== row.kind), ...list]);
-    await persistOrder(row.kind, list);
-    if (row.kind === "image" && (idx === 0 || swap === 0)) {
+  const reorder = async (kind: "image" | "video", fromId: string, toId: string) => {
+    const list = (kind === "image" ? images : videos).slice();
+    const fromIdx = list.findIndex((x) => x.id === fromId);
+    const toIdx = list.findIndex((x) => x.id === toId);
+    if (fromIdx < 0 || toIdx < 0 || fromIdx === toIdx) return;
+    const [moved] = list.splice(fromIdx, 1);
+    list.splice(toIdx, 0, moved);
+    setItems((prev) => [...prev.filter((x) => x.kind !== kind), ...list]);
+    await persistOrder(kind, list);
+    if (kind === "image" && (fromIdx === 0 || toIdx === 0)) {
       await supabase.from("listings").update({ cover_image_url: list[0].url }).eq("id", listingId);
+      toast.success("Couverture mise à jour");
     }
   };
 
@@ -90,7 +92,8 @@ export function MediaManager({ listingId }: { listingId: string }) {
   };
 
   const remove = async (row: MediaRow) => {
-    if (!confirm("Supprimer ce média ?")) return;
+    const label = row.kind === "image" ? "cette photo" : "cette vidéo";
+    if (!confirm(`Supprimer ${label} ? L'action est irréversible.`)) return;
     const table = row.kind === "image" ? "listing_images" : "ad_videos";
     const { error } = await (supabase as any).from(table).delete().eq("id", row.id);
     if (error) {
@@ -102,8 +105,8 @@ export function MediaManager({ listingId }: { listingId: string }) {
     if (key) {
       try {
         await deleteObj({ data: { key } });
-      } catch {
-        /* non-bloquant */
+      } catch (e: any) {
+        toast.error(`Fichier R2 non supprimé: ${e?.message ?? "erreur"}`);
       }
     }
     if (row.kind === "image") {
@@ -159,20 +162,19 @@ export function MediaManager({ listingId }: { listingId: string }) {
           <Section
             title={`Photos (${images.length})`}
             icon={<ImageIcon className="h-4 w-4" />}
-            empty="Aucune photo. La première sera la couverture."
+            empty="Aucune photo. Glissez la première en tête pour en faire la couverture."
             items={images}
             renderItem={(row, idx) => (
-              <Card
+              <DraggableCard
                 key={row.id}
                 row={row}
                 isCover={idx === 0}
                 onCover={() => setAsCover(row)}
-                onUp={() => move(row, -1)}
-                onDown={() => move(row, 1)}
                 onDelete={() => remove(row)}
-                disableUp={idx === 0}
-                disableDown={idx === images.length - 1}
                 savingCover={savingCover}
+                dragKey={dragKey}
+                setDragKey={setDragKey}
+                onDropOn={(srcId) => reorder("image", srcId, row.id)}
               />
             )}
           />
@@ -182,15 +184,14 @@ export function MediaManager({ listingId }: { listingId: string }) {
             icon={<Film className="h-4 w-4" />}
             empty="Aucune vidéo."
             items={videos}
-            renderItem={(row, idx) => (
-              <Card
+            renderItem={(row) => (
+              <DraggableCard
                 key={row.id}
                 row={row}
-                onUp={() => move(row, -1)}
-                onDown={() => move(row, 1)}
                 onDelete={() => remove(row)}
-                disableUp={idx === 0}
-                disableDown={idx === videos.length - 1}
+                dragKey={dragKey}
+                setDragKey={setDragKey}
+                onDropOn={(srcId) => reorder("video", srcId, row.id)}
               />
             )}
           />
@@ -217,64 +218,81 @@ function Section({
   );
 }
 
-function Card({
-  row, isCover, onCover, onUp, onDown, onDelete, disableUp, disableDown, savingCover,
+function DraggableCard({
+  row, isCover, onCover, onDelete, savingCover, dragKey, setDragKey, onDropOn,
 }: {
   row: MediaRow;
   isCover?: boolean;
   onCover?: () => void;
-  onUp: () => void;
-  onDown: () => void;
   onDelete: () => void;
-  disableUp?: boolean;
-  disableDown?: boolean;
   savingCover?: boolean;
+  dragKey: string | null;
+  setDragKey: (id: string | null) => void;
+  onDropOn: (srcId: string) => void;
 }) {
+  const isDragging = dragKey === row.id;
   return (
-    <div className={cn("group relative aspect-square overflow-hidden rounded-xl border bg-slate-100", isCover ? "border-amber-400 ring-2 ring-amber-200" : "border-slate-200")}>
+    <div
+      draggable
+      onDragStart={(e) => {
+        setDragKey(row.id);
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("text/plain", row.id);
+      }}
+      onDragOver={(e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+      }}
+      onDrop={(e) => {
+        e.preventDefault();
+        const src = e.dataTransfer.getData("text/plain") || dragKey;
+        if (src && src !== row.id) onDropOn(src);
+        setDragKey(null);
+      }}
+      onDragEnd={() => setDragKey(null)}
+      className={cn(
+        "group relative aspect-square overflow-hidden rounded-xl border bg-slate-100 transition",
+        isCover ? "border-amber-400 ring-2 ring-amber-200" : "border-slate-200",
+        isDragging && "opacity-50 ring-2 ring-emerald-400",
+      )}
+    >
       {row.kind === "image" ? (
-        <img src={row.url} alt="" className="h-full w-full object-cover" />
+        <img src={row.url} alt="" className="h-full w-full object-cover" draggable={false} />
       ) : (
         <video src={row.url} className="h-full w-full object-cover" controls muted />
       )}
 
+      <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-black/50 px-2 py-1 text-white opacity-0 transition group-hover:opacity-100">
+        <GripVertical className="h-3 w-3" />
+      </span>
+
       {isCover && (
-        <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-semibold text-white shadow">
+        <span className="absolute left-2 bottom-2 inline-flex items-center gap-1 rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-semibold text-white shadow">
           <Star className="h-3 w-3" /> Couverture
         </span>
       )}
 
-      <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-1 bg-gradient-to-t from-black/80 to-transparent p-2 opacity-0 transition group-hover:opacity-100">
-        <div className="flex gap-1">
-          <IconBtn title="Monter" disabled={disableUp} onClick={onUp}><ArrowUp className="h-3.5 w-3.5" /></IconBtn>
-          <IconBtn title="Descendre" disabled={disableDown} onClick={onDown}><ArrowDown className="h-3.5 w-3.5" /></IconBtn>
-        </div>
-        <div className="flex gap-1">
-          {onCover && !isCover && (
-            <IconBtn title="Définir comme couverture" onClick={onCover} disabled={savingCover}>
-              <Star className="h-3.5 w-3.5" />
-            </IconBtn>
-          )}
-          <IconBtn title="Supprimer" onClick={onDelete} danger><Trash2 className="h-3.5 w-3.5" /></IconBtn>
-        </div>
+      <div className="absolute right-2 top-2 flex gap-1 opacity-0 transition group-hover:opacity-100">
+        {onCover && !isCover && (
+          <button
+            type="button"
+            title="Définir comme couverture"
+            onClick={onCover}
+            disabled={savingCover}
+            className="grid h-7 w-7 place-items-center rounded-full bg-white/95 text-amber-600 shadow-sm hover:bg-amber-100 disabled:opacity-40"
+          >
+            <Star className="h-3.5 w-3.5" />
+          </button>
+        )}
+        <button
+          type="button"
+          title="Supprimer"
+          onClick={onDelete}
+          className="grid h-7 w-7 place-items-center rounded-full bg-white/95 text-red-600 shadow-sm hover:bg-red-600 hover:text-white"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
       </div>
     </div>
-  );
-}
-
-function IconBtn({ children, onClick, disabled, danger, title }: { children: React.ReactNode; onClick: () => void; disabled?: boolean; danger?: boolean; title: string }) {
-  return (
-    <button
-      type="button"
-      title={title}
-      onClick={onClick}
-      disabled={disabled}
-      className={cn(
-        "grid h-7 w-7 place-items-center rounded-full bg-white/95 text-slate-700 shadow-sm transition hover:bg-white disabled:opacity-40",
-        danger && "hover:bg-red-600 hover:text-white",
-      )}
-    >
-      {children}
-    </button>
   );
 }
