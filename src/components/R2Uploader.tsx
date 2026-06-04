@@ -3,7 +3,8 @@ import { useServerFn } from "@tanstack/react-start";
 import imageCompression from "browser-image-compression";
 import { Upload, X, Image as ImageIcon, Film, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { getR2UploadUrl, deleteR2Object } from "@/lib/r2.functions";
+import { supabase } from "@/integrations/supabase/client";
+import { deleteR2Object } from "@/lib/r2.functions";
 import { cn } from "@/lib/utils";
 
 export type R2Asset = {
@@ -25,11 +26,58 @@ type Props = {
   label?: string;
 };
 
+const ALLOWED_IMAGE = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+const ALLOWED_VIDEO = ["video/mp4", "video/quicktime", "video/webm"];
+
 const ACCEPT_MAP: Record<NonNullable<Props["accept"]>, string> = {
-  image: "image/*",
-  video: "video/*",
-  any: "image/*,video/*",
+  image: ALLOWED_IMAGE.join(","),
+  video: ALLOWED_VIDEO.join(","),
+  any: [...ALLOWED_IMAGE, ...ALLOWED_VIDEO].join(","),
 };
+
+const MAX_RETRIES = 2;
+
+function uploadWithProgress(
+  file: File | Blob,
+  folder: string,
+  token: string,
+  onProgress: (pct: number) => void,
+): Promise<R2Asset> {
+  return new Promise((resolve, reject) => {
+    const form = new FormData();
+    const filename = (file as File).name || "upload";
+    form.append("folder", folder);
+    form.append("file", file, filename);
+
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", "/api/r2-upload");
+    xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
+    };
+    xhr.onerror = () =>
+      reject(new Error("Network error: could not reach /api/r2-upload (check your connection)"));
+    xhr.ontimeout = () => reject(new Error("Upload timed out"));
+    xhr.onload = () => {
+      let payload: any = null;
+      try {
+        payload = xhr.responseText ? JSON.parse(xhr.responseText) : null;
+      } catch {
+        /* ignore */
+      }
+      if (xhr.status >= 200 && xhr.status < 300 && payload?.publicUrl) {
+        resolve(payload as R2Asset);
+      } else {
+        const msg =
+          payload?.error ||
+          xhr.responseText ||
+          `Upload failed (HTTP ${xhr.status} ${xhr.statusText})`;
+        reject(new Error(msg));
+      }
+    };
+    xhr.send(form);
+  });
+}
 
 export function R2Uploader({
   folder = "uploads",
@@ -42,7 +90,6 @@ export function R2Uploader({
   className,
   label = "Glissez vos fichiers ici ou cliquez pour parcourir",
 }: Props) {
-  const getUploadUrl = useServerFn(getR2UploadUrl);
   const deleteObj = useServerFn(deleteR2Object);
 
   const [internal, setInternal] = useState<R2Asset[]>([]);
@@ -59,69 +106,62 @@ export function R2Uploader({
 
   const uploadOne = useCallback(
     async (file: File): Promise<R2Asset | null> => {
-      try {
-        let toUpload: File | Blob = file;
-        if (file.type.startsWith("image/") && file.type !== "image/gif") {
-          try {
-            toUpload = await imageCompression(file, {
-              maxSizeMB: 1.5,
-              maxWidthOrHeight: 2000,
-              useWebWorker: true,
-              fileType: file.type as any,
-            });
-          } catch {
-            toUpload = file;
-          }
-        }
-
-        const { uploadUrl, key, publicUrl } = await getUploadUrl({
-          data: {
-            fileName: file.name,
-            contentType: file.type || "application/octet-stream",
-            folder,
-          },
-        });
-
-        await new Promise<void>((resolve, reject) => {
-          const xhr = new XMLHttpRequest();
-          xhr.open("PUT", uploadUrl);
-          xhr.setRequestHeader(
-            "Content-Type",
-            file.type || "application/octet-stream",
-          );
-          xhr.upload.onprogress = (e) => {
-            if (e.lengthComputable) {
-              setProgress((p) => ({
-                ...p,
-                [file.name]: Math.round((e.loaded / e.total) * 100),
-              }));
-            }
-          };
-          xhr.onload = () =>
-            xhr.status >= 200 && xhr.status < 300
-              ? resolve()
-              : reject(new Error(`Upload failed (${xhr.status})`));
-          xhr.onerror = () => reject(new Error("Network error"));
-          xhr.send(toUpload);
-        });
-
-        return {
-          key,
-          publicUrl,
-          contentType: file.type,
-          name: file.name,
-        };
-      } catch (err: any) {
-        toast.error(`${file.name}: ${err.message ?? "Upload failed"}`);
+      const isImage = file.type.startsWith("image/");
+      const allowed = isImage ? ALLOWED_IMAGE : ALLOWED_VIDEO;
+      if (!allowed.includes(file.type)) {
+        toast.error(
+          `${file.name}: format non supporté (${file.type || "inconnu"}). Acceptés : jpg, png, webp, mp4, mov, webm.`,
+        );
         return null;
-      } finally {
-        setProgress((p) => {
-          const { [file.name]: _, ...rest } = p;
-          return rest;
-        });
       }
+
+      let toUpload: File | Blob = file;
+      if (isImage && file.type !== "image/gif") {
+        try {
+          toUpload = await imageCompression(file, {
+            maxSizeMB: 1.5,
+            maxWidthOrHeight: 2000,
+            useWebWorker: true,
+            fileType: file.type as any,
+          });
+        } catch (e) {
+          console.warn("[R2Uploader] compression skipped:", e);
+          toUpload = file;
+        }
+      }
+
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) {
+        toast.error("Vous devez être connecté pour téléverser.");
+        return null;
+      }
+
+      let lastErr: unknown;
+      for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+        try {
+          const asset = await uploadWithProgress(toUpload, folder, token, (pct) =>
+            setProgress((p) => ({ ...p, [file.name]: pct })),
+          );
+          return asset;
+        } catch (err) {
+          lastErr = err;
+          console.error(`[R2Uploader] attempt ${attempt + 1} failed for ${file.name}:`, err);
+          if (attempt < MAX_RETRIES) {
+            await new Promise((r) => setTimeout(r, 500 * (attempt + 1)));
+          }
+        } finally {
+          setProgress((p) => {
+            const { [file.name]: _, ...rest } = p;
+            return rest;
+          });
+        }
+      }
+      const msg = lastErr instanceof Error ? lastErr.message : String(lastErr);
+      toast.error(`${file.name}: ${msg}`);
+      return null;
     },
-    [folder, getUploadUrl],
+    [folder],
   );
 
   const handleFiles = useCallback(
@@ -190,7 +230,7 @@ export function R2Uploader({
         </div>
         <p className="text-sm font-medium text-foreground">{label}</p>
         <p className="mt-1 text-xs text-muted-foreground">
-          {accept === "image" ? "Images" : accept === "video" ? "Vidéos" : "Images & vidéos"} · max {maxSizeMB} Mo
+          {accept === "image" ? "jpg, png, webp" : accept === "video" ? "mp4, mov, webm" : "jpg, png, webp, mp4, mov, webm"} · max {maxSizeMB} Mo
           {multiple ? ` · jusqu'à ${maxFiles} fichiers` : ""}
         </p>
       </div>
