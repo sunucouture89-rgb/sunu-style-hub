@@ -20,6 +20,7 @@ import { Route as AnnoncesRouteImport } from './routes/annonces'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ShopSlugRouteImport } from './routes/shop.$slug'
+import { Route as ApiR2UploadRouteImport } from './routes/api/r2-upload'
 import { Route as AnnoncesIdRouteImport } from './routes/annonces.$id'
 import { Route as DashboardListingsNewRouteImport } from './routes/dashboard.listings.new'
 import { Route as DashboardListingsIdMediaRouteImport } from './routes/dashboard.listings.$id.media'
@@ -80,6 +81,11 @@ const ShopSlugRoute = ShopSlugRouteImport.update({
   path: '/shop/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiR2UploadRoute = ApiR2UploadRouteImport.update({
+  id: '/api/r2-upload',
+  path: '/api/r2-upload',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AnnoncesIdRoute = AnnoncesIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -115,6 +121,7 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/uploads': typeof UploadsRoute
   '/annonces/$id': typeof AnnoncesIdRoute
+  '/api/r2-upload': typeof ApiR2UploadRoute
   '/shop/$slug': typeof ShopSlugRoute
   '/dashboard/listings/new': typeof DashboardListingsNewRoute
   '/api/public/hooks/expire-premium': typeof ApiPublicHooksExpirePremiumRoute
@@ -132,6 +139,7 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/uploads': typeof UploadsRoute
   '/annonces/$id': typeof AnnoncesIdRoute
+  '/api/r2-upload': typeof ApiR2UploadRoute
   '/shop/$slug': typeof ShopSlugRoute
   '/dashboard/listings/new': typeof DashboardListingsNewRoute
   '/api/public/hooks/expire-premium': typeof ApiPublicHooksExpirePremiumRoute
@@ -150,6 +158,7 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/uploads': typeof UploadsRoute
   '/annonces/$id': typeof AnnoncesIdRoute
+  '/api/r2-upload': typeof ApiR2UploadRoute
   '/shop/$slug': typeof ShopSlugRoute
   '/dashboard/listings/new': typeof DashboardListingsNewRoute
   '/api/public/hooks/expire-premium': typeof ApiPublicHooksExpirePremiumRoute
@@ -169,6 +178,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/uploads'
     | '/annonces/$id'
+    | '/api/r2-upload'
     | '/shop/$slug'
     | '/dashboard/listings/new'
     | '/api/public/hooks/expire-premium'
@@ -186,6 +196,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/uploads'
     | '/annonces/$id'
+    | '/api/r2-upload'
     | '/shop/$slug'
     | '/dashboard/listings/new'
     | '/api/public/hooks/expire-premium'
@@ -203,6 +214,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/uploads'
     | '/annonces/$id'
+    | '/api/r2-upload'
     | '/shop/$slug'
     | '/dashboard/listings/new'
     | '/api/public/hooks/expire-premium'
@@ -220,6 +232,7 @@ export interface RootRouteChildren {
   RegisterRoute: typeof RegisterRoute
   SignupRoute: typeof SignupRoute
   UploadsRoute: typeof UploadsRoute
+  ApiR2UploadRoute: typeof ApiR2UploadRoute
   ShopSlugRoute: typeof ShopSlugRoute
   ApiPublicHooksExpirePremiumRoute: typeof ApiPublicHooksExpirePremiumRoute
 }
@@ -303,6 +316,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShopSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/r2-upload': {
+      id: '/api/r2-upload'
+      path: '/api/r2-upload'
+      fullPath: '/api/r2-upload'
+      preLoaderRoute: typeof ApiR2UploadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/annonces/$id': {
       id: '/annonces/$id'
       path: '/$id'
@@ -371,6 +391,7 @@ const rootRouteChildren: RootRouteChildren = {
   RegisterRoute: RegisterRoute,
   SignupRoute: SignupRoute,
   UploadsRoute: UploadsRoute,
+  ApiR2UploadRoute: ApiR2UploadRoute,
   ShopSlugRoute: ShopSlugRoute,
   ApiPublicHooksExpirePremiumRoute: ApiPublicHooksExpirePremiumRoute,
 }
