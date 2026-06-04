@@ -14,10 +14,13 @@ import {
   Music2,
   Facebook,
   ImagePlus,
+  Play,
+  Expand,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
+import { Lightbox } from "@/components/Lightbox";
 
 export const Route = createFileRoute("/shop/$slug")({
   loader: async ({ params }) => {
@@ -87,6 +90,7 @@ function ShopPage() {
   const [following, setFollowing] = useState(false);
   const [followers, setFollowers] = useState(shop.followers_count);
   const [busy, setBusy] = useState(false);
+  const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
 
 
   useEffect(() => {
@@ -259,21 +263,37 @@ function ShopPage() {
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-                {media.map((m: any) => (
-                  <div
+                {media.map((m: any, i: number) => (
+                  <button
                     key={m.id}
+                    type="button"
+                    onClick={() => setLightboxIdx(i)}
                     className="group relative aspect-square overflow-hidden rounded-2xl bg-slate-100 ring-1 ring-slate-200"
                   >
                     {m.kind === "video" ? (
-                      <video src={m.url} className="h-full w-full object-cover" controls playsInline />
+                      <video src={m.url} className="h-full w-full object-cover" muted playsInline />
                     ) : (
                       <img src={m.url} alt="" className="h-full w-full object-cover transition group-hover:scale-105" />
                     )}
-                  </div>
+                    <span className="absolute inset-0 grid place-items-center transition group-hover:bg-black/30">
+                      <span className="grid h-10 w-10 place-items-center rounded-full bg-white/20 text-white opacity-0 backdrop-blur transition group-hover:opacity-100">
+                        {m.kind === "video" ? <Play className="h-4 w-4" /> : <Expand className="h-4 w-4" />}
+                      </span>
+                    </span>
+                  </button>
                 ))}
               </div>
             )}
           </section>
+        )}
+
+        {lightboxIdx !== null && media.length > 0 && (
+          <Lightbox
+            items={media.map((m: any) => ({ url: m.url, kind: m.kind, caption: m.caption }))}
+            index={lightboxIdx}
+            onClose={() => setLightboxIdx(null)}
+            onIndexChange={setLightboxIdx}
+          />
         )}
 
         {/* Products */}
