@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import imageCompression from "browser-image-compression";
-import { Upload, X, Image as ImageIcon, Film, Loader2 } from "lucide-react";
+import { Upload, X, Image as ImageIcon, Film, Loader2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { deleteR2Object } from "@/lib/r2.functions";
@@ -12,6 +12,14 @@ export type R2Asset = {
   publicUrl: string;
   contentType: string;
   name: string;
+};
+
+type UploadError = {
+  fileName: string;
+  message: string;
+  code?: string;
+  requestId?: string;
+  status?: number;
 };
 
 type Props = {
@@ -28,6 +36,8 @@ type Props = {
 
 const ALLOWED_IMAGE = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 const ALLOWED_VIDEO = ["video/mp4", "video/quicktime", "video/webm"];
+const MAX_IMAGE_BYTES = 20 * 1024 * 1024;
+const MAX_VIDEO_BYTES = 100 * 1024 * 1024;
 
 const ACCEPT_MAP: Record<NonNullable<Props["accept"]>, string> = {
   image: ALLOWED_IMAGE.join(","),
@@ -39,13 +49,13 @@ const MAX_RETRIES = 2;
 
 function uploadWithProgress(
   file: File | Blob,
+  filename: string,
   folder: string,
   token: string,
   onProgress: (pct: number) => void,
-): Promise<R2Asset> {
+): Promise<R2Asset & { requestId?: string }> {
   return new Promise((resolve, reject) => {
     const form = new FormData();
-    const filename = (file as File).name || "upload";
     form.append("folder", folder);
     form.append("file", file, filename);
 
@@ -55,9 +65,16 @@ function uploadWithProgress(
     xhr.upload.onprogress = (e) => {
       if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
     };
-    xhr.onerror = () =>
-      reject(new Error("Network error: could not reach /api/r2-upload (check your connection)"));
-    xhr.ontimeout = () => reject(new Error("Upload timed out"));
+    xhr.onerror = () => {
+      const err: any = new Error("Network error: impossible de joindre /api/r2-upload");
+      err.code = "network";
+      reject(err);
+    };
+    xhr.ontimeout = () => {
+      const err: any = new Error("Délai dépassé pendant l'upload");
+      err.code = "timeout";
+      reject(err);
+    };
     xhr.onload = () => {
       let payload: any = null;
       try {
@@ -66,13 +83,14 @@ function uploadWithProgress(
         /* ignore */
       }
       if (xhr.status >= 200 && xhr.status < 300 && payload?.publicUrl) {
-        resolve(payload as R2Asset);
+        resolve(payload);
       } else {
-        const msg =
-          payload?.error ||
-          xhr.responseText ||
-          `Upload failed (HTTP ${xhr.status} ${xhr.statusText})`;
-        reject(new Error(msg));
+        const msg = payload?.error || xhr.responseText || `Upload échoué (HTTP ${xhr.status})`;
+        const err: any = new Error(msg);
+        err.code = payload?.code ?? "http_error";
+        err.status = xhr.status;
+        err.requestId = payload?.requestId;
+        reject(err);
       }
     };
     xhr.send(form);
@@ -102,16 +120,27 @@ export function R2Uploader({
   const [dragOver, setDragOver] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState<Record<string, number>>({});
+  const [errors, setErrors] = useState<UploadError[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const pushError = (e: UploadError) => setErrors((prev) => [e, ...prev].slice(0, 5));
 
   const uploadOne = useCallback(
     async (file: File): Promise<R2Asset | null> => {
       const isImage = file.type.startsWith("image/");
-      const allowed = isImage ? ALLOWED_IMAGE : ALLOWED_VIDEO;
-      if (!allowed.includes(file.type)) {
-        toast.error(
-          `${file.name}: format non supporté (${file.type || "inconnu"}). Acceptés : jpg, png, webp, mp4, mov, webm.`,
-        );
+      const allowedList = isImage ? ALLOWED_IMAGE : ALLOWED_VIDEO;
+      if (!allowedList.includes(file.type)) {
+        const msg = `Format non supporté (${file.type || "inconnu"}). Acceptés : jpg, png, webp, mp4, mov, webm.`;
+        pushError({ fileName: file.name, message: msg, code: "bad_mime" });
+        toast.error(`${file.name}: ${msg}`);
+        return null;
+      }
+
+      const cap = isImage ? MAX_IMAGE_BYTES : MAX_VIDEO_BYTES;
+      if (file.size > cap) {
+        const msg = `Fichier trop volumineux (${(file.size / 1024 / 1024).toFixed(1)} Mo). Max ${cap / 1024 / 1024} Mo.`;
+        pushError({ fileName: file.name, message: msg, code: "too_large" });
+        toast.error(`${file.name}: ${msg}`);
         return null;
       }
 
@@ -133,23 +162,26 @@ export function R2Uploader({
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData.session?.access_token;
       if (!token) {
-        toast.error("Vous devez être connecté pour téléverser.");
+        const msg = "Vous devez être connecté pour téléverser.";
+        pushError({ fileName: file.name, message: msg, code: "no_auth" });
+        toast.error(msg);
         return null;
       }
 
-      let lastErr: unknown;
+      let lastErr: any;
       for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
         try {
-          const asset = await uploadWithProgress(toUpload, folder, token, (pct) =>
+          const asset = await uploadWithProgress(toUpload, file.name, folder, token, (pct) =>
             setProgress((p) => ({ ...p, [file.name]: pct })),
           );
           return asset;
         } catch (err) {
           lastErr = err;
           console.error(`[R2Uploader] attempt ${attempt + 1} failed for ${file.name}:`, err);
-          if (attempt < MAX_RETRIES) {
-            await new Promise((r) => setTimeout(r, 500 * (attempt + 1)));
-          }
+          // Don't retry on definitive errors
+          const code = (err as any)?.code;
+          if (["bad_mime", "too_large", "no_auth", "bad_token", "bad_form"].includes(code)) break;
+          if (attempt < MAX_RETRIES) await new Promise((r) => setTimeout(r, 500 * (attempt + 1)));
         } finally {
           setProgress((p) => {
             const { [file.name]: _, ...rest } = p;
@@ -157,8 +189,14 @@ export function R2Uploader({
           });
         }
       }
-      const msg = lastErr instanceof Error ? lastErr.message : String(lastErr);
-      toast.error(`${file.name}: ${msg}`);
+      pushError({
+        fileName: file.name,
+        message: lastErr?.message ?? String(lastErr),
+        code: lastErr?.code,
+        requestId: lastErr?.requestId,
+        status: lastErr?.status,
+      });
+      toast.error(`${file.name}: ${lastErr?.message ?? "Upload échoué"}`);
       return null;
     },
     [folder],
@@ -166,10 +204,12 @@ export function R2Uploader({
 
   const handleFiles = useCallback(
     async (files: FileList | File[]) => {
+      setErrors([]);
       const arr = Array.from(files);
       const allowed = multiple ? arr.slice(0, maxFiles - assets.length) : arr.slice(0, 1);
       const valid = allowed.filter((f) => {
         if (f.size > maxSizeMB * 1024 * 1024) {
+          pushError({ fileName: f.name, message: `Dépasse ${maxSizeMB} Mo`, code: "too_large" });
           toast.error(`${f.name} dépasse ${maxSizeMB} Mo`);
           return false;
         }
@@ -230,7 +270,11 @@ export function R2Uploader({
         </div>
         <p className="text-sm font-medium text-foreground">{label}</p>
         <p className="mt-1 text-xs text-muted-foreground">
-          {accept === "image" ? "jpg, png, webp" : accept === "video" ? "mp4, mov, webm" : "jpg, png, webp, mp4, mov, webm"} · max {maxSizeMB} Mo
+          {accept === "image"
+            ? "jpg, png, webp · max 20 Mo"
+            : accept === "video"
+              ? "mp4, mov, webm · max 100 Mo"
+              : "Images (jpg/png/webp ≤ 20 Mo) · Vidéos (mp4/mov/webm ≤ 100 Mo)"}
           {multiple ? ` · jusqu'à ${maxFiles} fichiers` : ""}
         </p>
       </div>
@@ -248,6 +292,48 @@ export function R2Uploader({
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {errors.length > 0 && (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4">
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <p className="inline-flex items-center gap-2 text-sm font-semibold text-red-800">
+              <AlertTriangle className="h-4 w-4" />
+              {errors.length === 1 ? "Erreur d'upload" : `${errors.length} erreurs d'upload`}
+            </p>
+            <button
+              type="button"
+              onClick={() => setErrors([])}
+              className="text-xs text-red-700 underline hover:text-red-900"
+            >
+              Effacer
+            </button>
+          </div>
+          <ul className="space-y-2 text-xs text-red-900">
+            {errors.map((e, i) => (
+              <li key={i} className="rounded-md bg-white/70 p-2 ring-1 ring-red-100">
+                <p className="truncate font-medium">{e.fileName}</p>
+                <p className="mt-0.5">{e.message}</p>
+                <p className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[10px] uppercase tracking-wide text-red-700/80">
+                  {e.code && <span>code: {e.code}</span>}
+                  {e.status != null && <span>http: {e.status}</span>}
+                  {e.requestId && <span>req: {e.requestId.slice(0, 8)}</span>}
+                </p>
+                <p className="mt-1 text-[11px] text-red-700/80">
+                  {e.code === "bad_mime"
+                    ? "Conseil : convertissez l'image en JPG/PNG/WEBP ou la vidéo en MP4/MOV/WEBM."
+                    : e.code === "too_large"
+                      ? "Conseil : compressez le fichier avant l'envoi."
+                      : e.code === "no_auth" || e.code === "bad_token"
+                        ? "Conseil : reconnectez-vous puis réessayez."
+                        : e.code === "r2_misconfig"
+                          ? "Conseil : prévenez un administrateur, R2 n'est pas configuré côté serveur."
+                          : "Conseil : réessayez, ou contactez le support en mentionnant le request id."}
+                </p>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 

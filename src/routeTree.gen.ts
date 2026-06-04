@@ -21,7 +21,9 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ShopSlugRouteImport } from './routes/shop.$slug'
 import { Route as ApiR2UploadRouteImport } from './routes/api/r2-upload'
+import { Route as ApiR2DiagnosticRouteImport } from './routes/api/r2-diagnostic'
 import { Route as AnnoncesIdRouteImport } from './routes/annonces.$id'
+import { Route as AdminUploadsRouteImport } from './routes/admin.uploads'
 import { Route as DashboardListingsNewRouteImport } from './routes/dashboard.listings.new'
 import { Route as DashboardListingsIdMediaRouteImport } from './routes/dashboard.listings.$id.media'
 import { Route as ApiPublicHooksExpirePremiumRouteImport } from './routes/api/public/hooks/expire-premium'
@@ -86,10 +88,20 @@ const ApiR2UploadRoute = ApiR2UploadRouteImport.update({
   path: '/api/r2-upload',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiR2DiagnosticRoute = ApiR2DiagnosticRouteImport.update({
+  id: '/api/r2-diagnostic',
+  path: '/api/r2-diagnostic',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AnnoncesIdRoute = AnnoncesIdRouteImport.update({
   id: '/$id',
   path: '/$id',
   getParentRoute: () => AnnoncesRoute,
+} as any)
+const AdminUploadsRoute = AdminUploadsRouteImport.update({
+  id: '/uploads',
+  path: '/uploads',
+  getParentRoute: () => AdminRoute,
 } as any)
 const DashboardListingsNewRoute = DashboardListingsNewRouteImport.update({
   id: '/listings/new',
@@ -111,7 +123,7 @@ const ApiPublicHooksExpirePremiumRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/annonces': typeof AnnoncesRouteWithChildren
   '/dashboard': typeof DashboardRouteWithChildren
   '/favorites': typeof FavoritesRoute
@@ -120,7 +132,9 @@ export interface FileRoutesByFullPath {
   '/register': typeof RegisterRoute
   '/signup': typeof SignupRoute
   '/uploads': typeof UploadsRoute
+  '/admin/uploads': typeof AdminUploadsRoute
   '/annonces/$id': typeof AnnoncesIdRoute
+  '/api/r2-diagnostic': typeof ApiR2DiagnosticRoute
   '/api/r2-upload': typeof ApiR2UploadRoute
   '/shop/$slug': typeof ShopSlugRoute
   '/dashboard/listings/new': typeof DashboardListingsNewRoute
@@ -129,7 +143,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/annonces': typeof AnnoncesRouteWithChildren
   '/dashboard': typeof DashboardRouteWithChildren
   '/favorites': typeof FavoritesRoute
@@ -138,7 +152,9 @@ export interface FileRoutesByTo {
   '/register': typeof RegisterRoute
   '/signup': typeof SignupRoute
   '/uploads': typeof UploadsRoute
+  '/admin/uploads': typeof AdminUploadsRoute
   '/annonces/$id': typeof AnnoncesIdRoute
+  '/api/r2-diagnostic': typeof ApiR2DiagnosticRoute
   '/api/r2-upload': typeof ApiR2UploadRoute
   '/shop/$slug': typeof ShopSlugRoute
   '/dashboard/listings/new': typeof DashboardListingsNewRoute
@@ -148,7 +164,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/annonces': typeof AnnoncesRouteWithChildren
   '/dashboard': typeof DashboardRouteWithChildren
   '/favorites': typeof FavoritesRoute
@@ -157,7 +173,9 @@ export interface FileRoutesById {
   '/register': typeof RegisterRoute
   '/signup': typeof SignupRoute
   '/uploads': typeof UploadsRoute
+  '/admin/uploads': typeof AdminUploadsRoute
   '/annonces/$id': typeof AnnoncesIdRoute
+  '/api/r2-diagnostic': typeof ApiR2DiagnosticRoute
   '/api/r2-upload': typeof ApiR2UploadRoute
   '/shop/$slug': typeof ShopSlugRoute
   '/dashboard/listings/new': typeof DashboardListingsNewRoute
@@ -177,7 +195,9 @@ export interface FileRouteTypes {
     | '/register'
     | '/signup'
     | '/uploads'
+    | '/admin/uploads'
     | '/annonces/$id'
+    | '/api/r2-diagnostic'
     | '/api/r2-upload'
     | '/shop/$slug'
     | '/dashboard/listings/new'
@@ -195,7 +215,9 @@ export interface FileRouteTypes {
     | '/register'
     | '/signup'
     | '/uploads'
+    | '/admin/uploads'
     | '/annonces/$id'
+    | '/api/r2-diagnostic'
     | '/api/r2-upload'
     | '/shop/$slug'
     | '/dashboard/listings/new'
@@ -213,7 +235,9 @@ export interface FileRouteTypes {
     | '/register'
     | '/signup'
     | '/uploads'
+    | '/admin/uploads'
     | '/annonces/$id'
+    | '/api/r2-diagnostic'
     | '/api/r2-upload'
     | '/shop/$slug'
     | '/dashboard/listings/new'
@@ -223,7 +247,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AdminRoute: typeof AdminRoute
+  AdminRoute: typeof AdminRouteWithChildren
   AnnoncesRoute: typeof AnnoncesRouteWithChildren
   DashboardRoute: typeof DashboardRouteWithChildren
   FavoritesRoute: typeof FavoritesRoute
@@ -232,6 +256,7 @@ export interface RootRouteChildren {
   RegisterRoute: typeof RegisterRoute
   SignupRoute: typeof SignupRoute
   UploadsRoute: typeof UploadsRoute
+  ApiR2DiagnosticRoute: typeof ApiR2DiagnosticRoute
   ApiR2UploadRoute: typeof ApiR2UploadRoute
   ShopSlugRoute: typeof ShopSlugRoute
   ApiPublicHooksExpirePremiumRoute: typeof ApiPublicHooksExpirePremiumRoute
@@ -323,12 +348,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiR2UploadRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/r2-diagnostic': {
+      id: '/api/r2-diagnostic'
+      path: '/api/r2-diagnostic'
+      fullPath: '/api/r2-diagnostic'
+      preLoaderRoute: typeof ApiR2DiagnosticRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/annonces/$id': {
       id: '/annonces/$id'
       path: '/$id'
       fullPath: '/annonces/$id'
       preLoaderRoute: typeof AnnoncesIdRouteImport
       parentRoute: typeof AnnoncesRoute
+    }
+    '/admin/uploads': {
+      id: '/admin/uploads'
+      path: '/uploads'
+      fullPath: '/admin/uploads'
+      preLoaderRoute: typeof AdminUploadsRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/dashboard/listings/new': {
       id: '/dashboard/listings/new'
@@ -353,6 +392,16 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface AdminRouteChildren {
+  AdminUploadsRoute: typeof AdminUploadsRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminUploadsRoute: AdminUploadsRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface AnnoncesRouteChildren {
   AnnoncesIdRoute: typeof AnnoncesIdRoute
@@ -382,7 +431,7 @@ const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AdminRoute: AdminRoute,
+  AdminRoute: AdminRouteWithChildren,
   AnnoncesRoute: AnnoncesRouteWithChildren,
   DashboardRoute: DashboardRouteWithChildren,
   FavoritesRoute: FavoritesRoute,
@@ -391,6 +440,7 @@ const rootRouteChildren: RootRouteChildren = {
   RegisterRoute: RegisterRoute,
   SignupRoute: SignupRoute,
   UploadsRoute: UploadsRoute,
+  ApiR2DiagnosticRoute: ApiR2DiagnosticRoute,
   ApiR2UploadRoute: ApiR2UploadRoute,
   ShopSlugRoute: ShopSlugRoute,
   ApiPublicHooksExpirePremiumRoute: ApiPublicHooksExpirePremiumRoute,
@@ -398,3 +448,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
