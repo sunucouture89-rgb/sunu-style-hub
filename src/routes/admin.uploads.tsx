@@ -209,6 +209,7 @@ function UploadFailuresPage() {
                     <th className="pr-3">HTTP</th>
                     <th className="pr-3">Raison</th>
                     <th className="pr-3">Req</th>
+                    <th className="pr-3 text-right">Action</th>
                   </tr>
                 </thead>
                 <tbody>
