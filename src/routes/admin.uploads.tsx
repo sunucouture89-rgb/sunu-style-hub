@@ -246,6 +246,21 @@ function UploadFailuresPage() {
                       <td className="pr-3 font-mono text-[10px] text-slate-400">
                         {r.request_id ? r.request_id.slice(0, 8) : "—"}
                       </td>
+                      <td className="pr-3 text-right">
+                        <button
+                          onClick={() => retryFailure(r.id)}
+                          disabled={retryBusyId === r.id}
+                          title="Vérifie R2 et notifie l'utilisateur de renvoyer son fichier"
+                          className="inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2.5 py-1 text-[11px] text-white hover:bg-emerald-700 disabled:opacity-60"
+                        >
+                          {retryBusyId === r.id ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <RefreshCw className="h-3 w-3" />
+                          )}
+                          Réessayer
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
