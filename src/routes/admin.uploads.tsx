@@ -34,6 +34,42 @@ function UploadFailuresPage() {
   const [fetching, setFetching] = useState(true);
   const [diag, setDiag] = useState<any>(null);
   const [diagBusy, setDiagBusy] = useState(false);
+  const [retryBusyId, setRetryBusyId] = useState<string | null>(null);
+
+  const retryFailure = async (failureId: string) => {
+    setRetryBusyId(failureId);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      const res = await fetch("/api/r2-retry", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ failureId }),
+      });
+      const body = await res.json();
+      if (!res.ok || !body.ok) {
+        toast.error(
+          body.r2Error
+            ? `R2 indisponible : ${body.r2Error}`
+            : (body.error ?? "Réessai impossible"),
+        );
+      } else {
+        toast.success(
+          body.notified
+            ? "Utilisateur notifié, échec retiré de la file."
+            : "R2 OK, échec retiré (utilisateur introuvable).",
+        );
+        setRows((prev) => prev.filter((r) => r.id !== failureId));
+      }
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erreur réseau");
+    } finally {
+      setRetryBusyId(null);
+    }
+  };
 
   const load = async () => {
     setFetching(true);
