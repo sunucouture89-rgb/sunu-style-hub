@@ -26,6 +26,13 @@ function sanitize(name: string) {
   return name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 80) || "file";
 }
 
+function validateR2BucketName(bucket: string) {
+  if (!/^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$/.test(bucket)) {
+    return "R2_BUCKET_NAME is invalid. Use only the bucket name: 3–63 chars, lowercase letters, numbers, and hyphens only. Do not use a URL, uppercase letters, underscores, dots, or slashes.";
+  }
+  return null;
+}
+
 async function logFailure(opts: {
   userId?: string;
   folder?: string;
@@ -85,6 +92,12 @@ function r2() {
   if (missing.length) {
     throw new Error(`R2 not configured. Missing env vars: ${missing.join(", ")}`);
   }
+
+  const bucketError = validateR2BucketName(bucket!);
+  if (bucketError) {
+    throw new Error(bucketError);
+  }
+
   return {
     client: new S3Client({
       region: "auto",
@@ -175,7 +188,7 @@ export const Route = createFileRoute("/api/r2-upload")({
               status: e?.$metadata?.httpStatusCode,
               detail,
             });
-            return fail(502, `R2 upload failed: ${detail}`, "r2_put_failed");
+            return fail(500, `R2 upload failed: ${detail}`, "r2_put_failed");
           }
 
           return json(
