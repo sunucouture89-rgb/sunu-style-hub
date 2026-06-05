@@ -21,6 +21,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ShopSlugRouteImport } from './routes/shop.$slug'
 import { Route as ApiR2UploadRouteImport } from './routes/api/r2-upload'
+import { Route as ApiR2RetryRouteImport } from './routes/api/r2-retry'
 import { Route as ApiR2DiagnosticRouteImport } from './routes/api/r2-diagnostic'
 import { Route as AnnoncesIdRouteImport } from './routes/annonces.$id'
 import { Route as AdminUploadsRouteImport } from './routes/admin.uploads'
@@ -88,6 +89,11 @@ const ApiR2UploadRoute = ApiR2UploadRouteImport.update({
   path: '/api/r2-upload',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiR2RetryRoute = ApiR2RetryRouteImport.update({
+  id: '/api/r2-retry',
+  path: '/api/r2-retry',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiR2DiagnosticRoute = ApiR2DiagnosticRouteImport.update({
   id: '/api/r2-diagnostic',
   path: '/api/r2-diagnostic',
@@ -135,6 +141,7 @@ export interface FileRoutesByFullPath {
   '/admin/uploads': typeof AdminUploadsRoute
   '/annonces/$id': typeof AnnoncesIdRoute
   '/api/r2-diagnostic': typeof ApiR2DiagnosticRoute
+  '/api/r2-retry': typeof ApiR2RetryRoute
   '/api/r2-upload': typeof ApiR2UploadRoute
   '/shop/$slug': typeof ShopSlugRoute
   '/dashboard/listings/new': typeof DashboardListingsNewRoute
@@ -155,6 +162,7 @@ export interface FileRoutesByTo {
   '/admin/uploads': typeof AdminUploadsRoute
   '/annonces/$id': typeof AnnoncesIdRoute
   '/api/r2-diagnostic': typeof ApiR2DiagnosticRoute
+  '/api/r2-retry': typeof ApiR2RetryRoute
   '/api/r2-upload': typeof ApiR2UploadRoute
   '/shop/$slug': typeof ShopSlugRoute
   '/dashboard/listings/new': typeof DashboardListingsNewRoute
@@ -176,6 +184,7 @@ export interface FileRoutesById {
   '/admin/uploads': typeof AdminUploadsRoute
   '/annonces/$id': typeof AnnoncesIdRoute
   '/api/r2-diagnostic': typeof ApiR2DiagnosticRoute
+  '/api/r2-retry': typeof ApiR2RetryRoute
   '/api/r2-upload': typeof ApiR2UploadRoute
   '/shop/$slug': typeof ShopSlugRoute
   '/dashboard/listings/new': typeof DashboardListingsNewRoute
@@ -198,6 +207,7 @@ export interface FileRouteTypes {
     | '/admin/uploads'
     | '/annonces/$id'
     | '/api/r2-diagnostic'
+    | '/api/r2-retry'
     | '/api/r2-upload'
     | '/shop/$slug'
     | '/dashboard/listings/new'
@@ -218,6 +228,7 @@ export interface FileRouteTypes {
     | '/admin/uploads'
     | '/annonces/$id'
     | '/api/r2-diagnostic'
+    | '/api/r2-retry'
     | '/api/r2-upload'
     | '/shop/$slug'
     | '/dashboard/listings/new'
@@ -238,6 +249,7 @@ export interface FileRouteTypes {
     | '/admin/uploads'
     | '/annonces/$id'
     | '/api/r2-diagnostic'
+    | '/api/r2-retry'
     | '/api/r2-upload'
     | '/shop/$slug'
     | '/dashboard/listings/new'
@@ -257,6 +269,7 @@ export interface RootRouteChildren {
   SignupRoute: typeof SignupRoute
   UploadsRoute: typeof UploadsRoute
   ApiR2DiagnosticRoute: typeof ApiR2DiagnosticRoute
+  ApiR2RetryRoute: typeof ApiR2RetryRoute
   ApiR2UploadRoute: typeof ApiR2UploadRoute
   ShopSlugRoute: typeof ShopSlugRoute
   ApiPublicHooksExpirePremiumRoute: typeof ApiPublicHooksExpirePremiumRoute
@@ -346,6 +359,13 @@ declare module '@tanstack/react-router' {
       path: '/api/r2-upload'
       fullPath: '/api/r2-upload'
       preLoaderRoute: typeof ApiR2UploadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/r2-retry': {
+      id: '/api/r2-retry'
+      path: '/api/r2-retry'
+      fullPath: '/api/r2-retry'
+      preLoaderRoute: typeof ApiR2RetryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/r2-diagnostic': {
@@ -441,6 +461,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignupRoute: SignupRoute,
   UploadsRoute: UploadsRoute,
   ApiR2DiagnosticRoute: ApiR2DiagnosticRoute,
+  ApiR2RetryRoute: ApiR2RetryRoute,
   ApiR2UploadRoute: ApiR2UploadRoute,
   ShopSlugRoute: ShopSlugRoute,
   ApiPublicHooksExpirePremiumRoute: ApiPublicHooksExpirePremiumRoute,
@@ -448,3 +469,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
