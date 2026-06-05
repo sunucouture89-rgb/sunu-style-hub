@@ -34,6 +34,42 @@ function UploadFailuresPage() {
   const [fetching, setFetching] = useState(true);
   const [diag, setDiag] = useState<any>(null);
   const [diagBusy, setDiagBusy] = useState(false);
+  const [retryBusyId, setRetryBusyId] = useState<string | null>(null);
+
+  const retryFailure = async (failureId: string) => {
+    setRetryBusyId(failureId);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      const res = await fetch("/api/r2-retry", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ failureId }),
+      });
+      const body = await res.json();
+      if (!res.ok || !body.ok) {
+        toast.error(
+          body.r2Error
+            ? `R2 indisponible : ${body.r2Error}`
+            : (body.error ?? "Réessai impossible"),
+        );
+      } else {
+        toast.success(
+          body.notified
+            ? "Utilisateur notifié, échec retiré de la file."
+            : "R2 OK, échec retiré (utilisateur introuvable).",
+        );
+        setRows((prev) => prev.filter((r) => r.id !== failureId));
+      }
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erreur réseau");
+    } finally {
+      setRetryBusyId(null);
+    }
+  };
 
   const load = async () => {
     setFetching(true);
@@ -173,6 +209,7 @@ function UploadFailuresPage() {
                     <th className="pr-3">HTTP</th>
                     <th className="pr-3">Raison</th>
                     <th className="pr-3">Req</th>
+                    <th className="pr-3 text-right">Action</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -208,6 +245,21 @@ function UploadFailuresPage() {
                       <td className="pr-3 max-w-[320px] text-red-700">{r.error ?? "—"}</td>
                       <td className="pr-3 font-mono text-[10px] text-slate-400">
                         {r.request_id ? r.request_id.slice(0, 8) : "—"}
+                      </td>
+                      <td className="pr-3 text-right">
+                        <button
+                          onClick={() => retryFailure(r.id)}
+                          disabled={retryBusyId === r.id}
+                          title="Vérifie R2 et notifie l'utilisateur de renvoyer son fichier"
+                          className="inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2.5 py-1 text-[11px] text-white hover:bg-emerald-700 disabled:opacity-60"
+                        >
+                          {retryBusyId === r.id ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <RefreshCw className="h-3 w-3" />
+                          )}
+                          Réessayer
+                        </button>
                       </td>
                     </tr>
                   ))}
