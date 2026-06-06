@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -28,12 +28,20 @@ import {
 } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard")({
-  component: () => (
+  component: DashboardRoute,
+});
+
+function DashboardRoute() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const isChild = pathname !== "/dashboard" && pathname !== "/dashboard/";
+  if (isChild) return <Outlet />;
+  return (
     <ProtectedRoute>
       <DashboardPage />
     </ProtectedRoute>
-  ),
-});
+  );
+}
+
 
 type Tab = "overview" | "shop" | "listings" | "orders" | "payments" | "boost";
 
