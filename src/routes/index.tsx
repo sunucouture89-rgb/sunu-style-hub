@@ -4,6 +4,7 @@ import { Hero } from "@/components/landing/Hero";
 import { Categories } from "@/components/landing/Categories";
 import { Creations } from "@/components/landing/Creations";
 import { PremiumSlider } from "@/components/landing/PremiumSlider";
+import { AllListings } from "@/components/landing/AllListings";
 import { Couturiers } from "@/components/landing/Couturiers";
 import { SurMesure } from "@/components/landing/SurMesure";
 import { Testimonials } from "@/components/landing/Testimonials";
