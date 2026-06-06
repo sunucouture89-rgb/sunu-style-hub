@@ -35,6 +35,7 @@ function Index() {
       <Hero />
       <Categories />
       <PremiumSlider />
+      <AllListings />
       <Creations />
       <Couturiers />
       <SurMesure />
