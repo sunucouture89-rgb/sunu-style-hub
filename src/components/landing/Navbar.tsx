@@ -33,11 +33,7 @@ export function Navbar() {
   };
 
   return (
-    <header
-      className={`fixed inset-x-0 top-0 z-50 transition-all duration-500 ${
-        scrolled ? "bg-background/85 backdrop-blur-xl border-b border-border/60" : "bg-transparent"
-      }`}
-    >
+    <header className="fixed inset-x-0 top-0 z-50 bg-amber-50/95 backdrop-blur-md border-b border-amber-200 shadow-sm transition-all duration-500">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-10">
         <Link to="/" className="flex items-center gap-3">
           <img src={logo} alt="Sunu Couture" className="h-12 w-12 object-contain" />
