@@ -3,8 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import imageCompression from "browser-image-compression";
 import { Upload, X, Image as ImageIcon, Film, Loader2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
-import { deleteR2Object } from "@/lib/r2.functions";
+import { deleteR2Object, getR2UploadUrl } from "@/lib/r2.functions";
 import { cn } from "@/lib/utils";
 
 export type R2Asset = {
@@ -47,53 +46,41 @@ const ACCEPT_MAP: Record<NonNullable<Props["accept"]>, string> = {
 
 const MAX_RETRIES = 2;
 
-function uploadWithProgress(
+function putToR2(
   file: File | Blob,
-  filename: string,
-  folder: string,
-  token: string,
+  uploadUrl: string,
+  contentType: string,
   onProgress: (pct: number) => void,
-): Promise<R2Asset & { requestId?: string }> {
+): Promise<void> {
   return new Promise((resolve, reject) => {
-    const form = new FormData();
-    form.append("folder", folder);
-    form.append("file", file, filename);
-
     const xhr = new XMLHttpRequest();
-    xhr.open("POST", "/api/r2-upload");
-    xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+    xhr.open("PUT", uploadUrl);
+    xhr.setRequestHeader("Content-Type", contentType);
     xhr.upload.onprogress = (e) => {
       if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
     };
     xhr.onerror = () => {
-      const err: any = new Error("Network error: impossible de joindre /api/r2-upload");
-      err.code = "network";
+      const err: any = new Error(
+        "Network error vers R2. Vérifiez la configuration CORS du bucket (autoriser PUT depuis votre domaine).",
+      );
+      err.code = "r2_cors";
       reject(err);
     };
     xhr.ontimeout = () => {
-      const err: any = new Error("Délai dépassé pendant l'upload");
+      const err: any = new Error("Délai dépassé pendant l'upload vers R2");
       err.code = "timeout";
       reject(err);
     };
     xhr.onload = () => {
-      let payload: any = null;
-      try {
-        payload = xhr.responseText ? JSON.parse(xhr.responseText) : null;
-      } catch {
-        /* ignore */
-      }
-      if (xhr.status >= 200 && xhr.status < 300 && payload?.publicUrl) {
-        resolve(payload);
-      } else {
-        const msg = payload?.error || xhr.responseText || `Upload échoué (HTTP ${xhr.status})`;
-        const err: any = new Error(msg);
-        err.code = payload?.code ?? "http_error";
+      if (xhr.status >= 200 && xhr.status < 300) resolve();
+      else {
+        const err: any = new Error(`R2 a refusé le fichier (HTTP ${xhr.status})`);
+        err.code = "r2_put_failed";
         err.status = xhr.status;
-        err.requestId = payload?.requestId;
         reject(err);
       }
     };
-    xhr.send(form);
+    xhr.send(file);
   });
 }
 
@@ -109,6 +96,7 @@ export function R2Uploader({
   label = "Glissez vos fichiers ici ou cliquez pour parcourir",
 }: Props) {
   const deleteObj = useServerFn(deleteR2Object);
+  const signUpload = useServerFn(getR2UploadUrl);
 
   const [internal, setInternal] = useState<R2Asset[]>([]);
   const assets = value ?? internal;
@@ -159,28 +147,27 @@ export function R2Uploader({
         }
       }
 
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData.session?.access_token;
-      if (!token) {
-        const msg = "Vous devez être connecté pour téléverser.";
-        pushError({ fileName: file.name, message: msg, code: "no_auth" });
-        toast.error(msg);
-        return null;
-      }
-
+      const contentType = file.type || "application/octet-stream";
       let lastErr: any;
       for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
         try {
-          const asset = await uploadWithProgress(toUpload, file.name, folder, token, (pct) =>
+          const signed = await signUpload({
+            data: { fileName: file.name, contentType, folder },
+          });
+          await putToR2(toUpload, signed.uploadUrl, contentType, (pct) =>
             setProgress((p) => ({ ...p, [file.name]: pct })),
           );
-          return asset;
+          return {
+            key: signed.key,
+            publicUrl: signed.publicUrl,
+            contentType,
+            name: file.name,
+          };
         } catch (err) {
           lastErr = err;
           console.error(`[R2Uploader] attempt ${attempt + 1} failed for ${file.name}:`, err);
-          // Don't retry on definitive errors
           const code = (err as any)?.code;
-          if (["bad_mime", "too_large", "no_auth", "bad_token", "bad_form"].includes(code)) break;
+          if (["bad_mime", "too_large", "no_auth", "bad_token", "r2_cors"].includes(code)) break;
           if (attempt < MAX_RETRIES) await new Promise((r) => setTimeout(r, 500 * (attempt + 1)));
         } finally {
           setProgress((p) => {
@@ -327,9 +314,11 @@ export function R2Uploader({
                       ? "Conseil : compressez le fichier avant l'envoi."
                       : e.code === "no_auth" || e.code === "bad_token"
                         ? "Conseil : reconnectez-vous puis réessayez."
-                        : e.code === "r2_misconfig"
-                          ? "Conseil : prévenez un administrateur, R2 n'est pas configuré côté serveur."
-                          : "Conseil : réessayez, ou contactez le support en mentionnant le request id."}
+                        : e.code === "r2_cors"
+                          ? "Conseil : activez CORS sur le bucket R2 (méthode PUT, en-tête Content-Type, votre domaine)."
+                          : e.code === "r2_misconfig"
+                            ? "Conseil : prévenez un administrateur, R2 n'est pas configuré côté serveur."
+                            : "Conseil : réessayez, ou contactez le support en mentionnant le request id."}
                 </p>
               </li>
             ))}
