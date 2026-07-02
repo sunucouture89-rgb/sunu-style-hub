@@ -3,8 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import imageCompression from "browser-image-compression";
 import { Upload, X, Image as ImageIcon, Film, Loader2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
-import { deleteR2Object } from "@/lib/r2.functions";
+import { deleteR2Object, getR2UploadUrl } from "@/lib/r2.functions";
 import { cn } from "@/lib/utils";
 
 export type R2Asset = {
