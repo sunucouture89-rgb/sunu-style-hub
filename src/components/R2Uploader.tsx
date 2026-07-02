@@ -96,6 +96,7 @@ export function R2Uploader({
   label = "Glissez vos fichiers ici ou cliquez pour parcourir",
 }: Props) {
   const deleteObj = useServerFn(deleteR2Object);
+  const signUpload = useServerFn(getR2UploadUrl);
 
   const [internal, setInternal] = useState<R2Asset[]>([]);
   const assets = value ?? internal;
