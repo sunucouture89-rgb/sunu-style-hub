@@ -46,53 +46,41 @@ const ACCEPT_MAP: Record<NonNullable<Props["accept"]>, string> = {
 
 const MAX_RETRIES = 2;
 
-function uploadWithProgress(
+function putToR2(
   file: File | Blob,
-  filename: string,
-  folder: string,
-  token: string,
+  uploadUrl: string,
+  contentType: string,
   onProgress: (pct: number) => void,
-): Promise<R2Asset & { requestId?: string }> {
+): Promise<void> {
   return new Promise((resolve, reject) => {
-    const form = new FormData();
-    form.append("folder", folder);
-    form.append("file", file, filename);
-
     const xhr = new XMLHttpRequest();
-    xhr.open("POST", "/api/r2-upload");
-    xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+    xhr.open("PUT", uploadUrl);
+    xhr.setRequestHeader("Content-Type", contentType);
     xhr.upload.onprogress = (e) => {
       if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
     };
     xhr.onerror = () => {
-      const err: any = new Error("Network error: impossible de joindre /api/r2-upload");
-      err.code = "network";
+      const err: any = new Error(
+        "Network error vers R2. Vérifiez la configuration CORS du bucket (autoriser PUT depuis votre domaine).",
+      );
+      err.code = "r2_cors";
       reject(err);
     };
     xhr.ontimeout = () => {
-      const err: any = new Error("Délai dépassé pendant l'upload");
+      const err: any = new Error("Délai dépassé pendant l'upload vers R2");
       err.code = "timeout";
       reject(err);
     };
     xhr.onload = () => {
-      let payload: any = null;
-      try {
-        payload = xhr.responseText ? JSON.parse(xhr.responseText) : null;
-      } catch {
-        /* ignore */
-      }
-      if (xhr.status >= 200 && xhr.status < 300 && payload?.publicUrl) {
-        resolve(payload);
-      } else {
-        const msg = payload?.error || xhr.responseText || `Upload échoué (HTTP ${xhr.status})`;
-        const err: any = new Error(msg);
-        err.code = payload?.code ?? "http_error";
+      if (xhr.status >= 200 && xhr.status < 300) resolve();
+      else {
+        const err: any = new Error(`R2 a refusé le fichier (HTTP ${xhr.status})`);
+        err.code = "r2_put_failed";
         err.status = xhr.status;
-        err.requestId = payload?.requestId;
         reject(err);
       }
     };
-    xhr.send(form);
+    xhr.send(file);
   });
 }
 
