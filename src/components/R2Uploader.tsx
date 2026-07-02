@@ -146,28 +146,27 @@ export function R2Uploader({
         }
       }
 
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData.session?.access_token;
-      if (!token) {
-        const msg = "Vous devez être connecté pour téléverser.";
-        pushError({ fileName: file.name, message: msg, code: "no_auth" });
-        toast.error(msg);
-        return null;
-      }
-
+      const contentType = file.type || "application/octet-stream";
       let lastErr: any;
       for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
         try {
-          const asset = await uploadWithProgress(toUpload, file.name, folder, token, (pct) =>
+          const signed = await signUpload({
+            data: { fileName: file.name, contentType, folder },
+          });
+          await putToR2(toUpload, signed.uploadUrl, contentType, (pct) =>
             setProgress((p) => ({ ...p, [file.name]: pct })),
           );
-          return asset;
+          return {
+            key: signed.key,
+            publicUrl: signed.publicUrl,
+            contentType,
+            name: file.name,
+          };
         } catch (err) {
           lastErr = err;
           console.error(`[R2Uploader] attempt ${attempt + 1} failed for ${file.name}:`, err);
-          // Don't retry on definitive errors
           const code = (err as any)?.code;
-          if (["bad_mime", "too_large", "no_auth", "bad_token", "bad_form"].includes(code)) break;
+          if (["bad_mime", "too_large", "no_auth", "bad_token", "r2_cors"].includes(code)) break;
           if (attempt < MAX_RETRIES) await new Promise((r) => setTimeout(r, 500 * (attempt + 1)));
         } finally {
           setProgress((p) => {
