@@ -314,9 +314,11 @@ export function R2Uploader({
                       ? "Conseil : compressez le fichier avant l'envoi."
                       : e.code === "no_auth" || e.code === "bad_token"
                         ? "Conseil : reconnectez-vous puis réessayez."
-                        : e.code === "r2_misconfig"
-                          ? "Conseil : prévenez un administrateur, R2 n'est pas configuré côté serveur."
-                          : "Conseil : réessayez, ou contactez le support en mentionnant le request id."}
+                        : e.code === "r2_cors"
+                          ? "Conseil : activez CORS sur le bucket R2 (méthode PUT, en-tête Content-Type, votre domaine)."
+                          : e.code === "r2_misconfig"
+                            ? "Conseil : prévenez un administrateur, R2 n'est pas configuré côté serveur."
+                            : "Conseil : réessayez, ou contactez le support en mentionnant le request id."}
                 </p>
               </li>
             ))}
