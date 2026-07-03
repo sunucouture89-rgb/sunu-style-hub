@@ -8,7 +8,8 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
-    "deploy": "bun run build && wrangler deploy",
+    "check:secrets": "node scripts/check-worker-secrets.mjs",
+    "deploy": "bun run check:secrets && bun run build && wrangler deploy",
     "deploy:dry-run": "bun run build && wrangler deploy --dry-run",
     "lint": "eslint .",
     "format": "prettier --write ."
