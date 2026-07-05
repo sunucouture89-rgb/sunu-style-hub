@@ -9,7 +9,10 @@
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "check:secrets": "node scripts/check-worker-secrets.mjs",
-    "deploy": "bun run check:secrets && bun run build && wrangler deploy",
+    "check:d1": "node scripts/check-d1-binding.mjs",
+    "check:cors": "node scripts/check-r2-cors.mjs",
+    "smoke:upload": "node scripts/smoke-test-upload.mjs",
+    "deploy": "bun run check:secrets && bun run check:d1 && bun run build && wrangler deploy",
     "deploy:dry-run": "bun run build && wrangler deploy --dry-run",
     "lint": "eslint .",
     "format": "prettier --write ."

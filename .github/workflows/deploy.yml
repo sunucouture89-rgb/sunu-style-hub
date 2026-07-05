@@ -1,0 +1,40 @@
+name: Deploy to Cloudflare
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Preflight — R2 Worker secrets
+        run: bun run check:secrets
+
+      - name: Preflight — D1 binding (optional)
+        run: bun run check:d1 || echo "::warning::D1 check failed or skipped"
+        env:
+          SKIP_D1_CHECK: ${{ vars.SKIP_D1_CHECK || '0' }}
+
+      - name: Deploy
+        run: bun run deploy
+
+      - name: Smoke test — upload R2
+        if: ${{ secrets.SMOKE_AUTH_TOKEN != '' }}
+        run: bun run smoke:upload
+        env:
+          DEPLOY_URL: ${{ vars.DEPLOY_URL || 'https://sunu-style-studio.lovable.app' }}
+          SMOKE_AUTH_TOKEN: ${{ secrets.SMOKE_AUTH_TOKEN }}
