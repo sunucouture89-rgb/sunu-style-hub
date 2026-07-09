@@ -70,7 +70,23 @@ export const generateShopDescription = createServerFn({ method: "POST" })
     }
 
     const json = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
-    const text = json.choices?.[0]?.message?.content?.trim() ?? "";
-    if (!text) throw new Error("Réponse IA vide");
-    return { description: text };
+    const raw = json.choices?.[0]?.message?.content?.trim() ?? "";
+    if (!raw) throw new Error("Réponse IA vide");
+
+    // Nettoyage : retire guillemets, markdown, coupe à une phrase complète sous la limite.
+    const cleaned = raw.replace(/^["'«»\s]+|["'«»\s]+$/g, "").replace(/[*_#`>]/g, "");
+    const description = clampToSentence(cleaned, DESCRIPTION_MAX);
+
+    const issues = validateDescription(description);
+    const blocking = issues.filter((i) => i.type === "forbidden" || i.type === "too_long");
+    if (blocking.length > 0) {
+      throw new Error(
+        "L'IA a produit un contenu non conforme : " +
+          blocking.map((i) => i.message).join(" ") +
+          " Réessayez avec d'autres mots-clés.",
+      );
+    }
+    return { description, issues };
+  });
+
   });
