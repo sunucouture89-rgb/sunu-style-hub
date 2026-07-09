@@ -8,6 +8,8 @@ import { R2Uploader, type R2Asset } from "@/components/R2Uploader";
 import { ShopGallery } from "@/components/ShopGallery";
 import { useAuth } from "@/hooks/use-auth";
 import { generateShopDescription } from "@/lib/ai.functions";
+import { validateDescription } from "@/lib/description-validation";
+
 
 
 type Shop = {
