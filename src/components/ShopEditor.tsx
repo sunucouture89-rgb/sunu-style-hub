@@ -255,9 +255,66 @@ export function ShopEditor({ userId }: { userId: string }) {
           <input className={inp} value={shop.tagline ?? ""} onChange={(e) => update({ tagline: e.target.value })} maxLength={120} placeholder="Couture sur-mesure haut de gamme" />
         </Field>
         <Field label="Description">
-          <textarea className={`${inp} min-h-[120px]`} value={shop.description ?? ""} onChange={(e) => update({ description: e.target.value })} maxLength={2000} placeholder="Parlez de votre savoir-faire, votre style, votre histoire…" />
+          <div className="space-y-2">
+            <div className="rounded-xl bg-gradient-to-br from-violet-50 to-emerald-50 p-3 ring-1 ring-violet-100">
+              <div className="flex items-center gap-2 text-xs font-medium text-violet-800">
+                <Wand2 className="h-3.5 w-3.5" /> Assistant IA — rédigez en 1 clic
+              </div>
+              <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+                <input
+                  className={`${inp} flex-1`}
+                  placeholder="Mots-clés (ex: bazin riche, mariage, sur-mesure Dakar)"
+                  value={aiKeywords}
+                  onChange={(e) => setAiKeywords(e.target.value)}
+                />
+                <button
+                  type="button"
+                  disabled={aiBusy}
+                  onClick={async () => {
+                    setAiBusy(true);
+                    try {
+                      const r = await genDesc({
+                        data: {
+                          name: shop.name,
+                          tagline: shop.tagline ?? "",
+                          city: shop.city ?? "",
+                          country: shop.country ?? "",
+                          current: shop.description ?? "",
+                          keywords: aiKeywords,
+                        },
+                      });
+                      update({ description: r.description });
+                      toast.success("Description générée — pensez à enregistrer");
+                    } catch (e: any) {
+                      toast.error(e?.message ?? "Erreur IA");
+                    } finally {
+                      setAiBusy(false);
+                    }
+                  }}
+                  className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-violet-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-violet-700 disabled:opacity-60"
+                >
+                  {aiBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                  {shop.description ? "Améliorer" : "Générer"}
+                </button>
+              </div>
+              <p className="mt-1.5 text-[10px] text-slate-500">
+                L'IA s'appuie sur votre nom, slogan, ville et mots-clés pour rédiger une description soignée.
+              </p>
+            </div>
+            <textarea
+              className={`${inp} min-h-[120px]`}
+              value={shop.description ?? ""}
+              onChange={(e) => update({ description: e.target.value })}
+              maxLength={2000}
+              placeholder="Parlez de votre savoir-faire, votre style, votre histoire…"
+            />
+            <div className="text-right text-[10px] text-slate-400">
+              {(shop.description ?? "").length}/2000
+            </div>
+          </div>
         </Field>
       </div>
+
 
       {/* Contact */}
       <div className="rounded-2xl bg-white p-6 ring-1 ring-slate-200 space-y-4">
