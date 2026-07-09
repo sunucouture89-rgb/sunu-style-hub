@@ -1,5 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import {
+  clampToSentence,
+  DESCRIPTION_MAX,
+  validateDescription,
+} from "./description-validation";
+
 
 type Input = {
   name?: string;
