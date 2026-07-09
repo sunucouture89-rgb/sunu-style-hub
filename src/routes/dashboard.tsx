@@ -190,7 +190,7 @@ function StatCard({ label, value, icon: Icon, accent }: any) {
   );
 }
 
-function Overview({ revenue, pending, totalViews, listingsCount }: any) {
+function Overview({ revenue, pending, totalViews, listingsCount, onGoPremium }: any) {
   return (
     <>
       <header className="flex items-center justify-between">
