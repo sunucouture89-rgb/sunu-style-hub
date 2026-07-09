@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Save, Loader2, ExternalLink, BadgeCheck, ImagePlus, Sparkles } from "lucide-react";
+import { Save, Loader2, ExternalLink, BadgeCheck, Sparkles, Wand2 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { R2Uploader, type R2Asset } from "@/components/R2Uploader";
 import { ShopGallery } from "@/components/ShopGallery";
 import { useAuth } from "@/hooks/use-auth";
+import { generateShopDescription } from "@/lib/ai.functions";
+
 
 type Shop = {
   id: string;
