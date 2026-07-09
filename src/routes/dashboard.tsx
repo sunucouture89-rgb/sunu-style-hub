@@ -161,7 +161,7 @@ function DashboardPage() {
           </div>
 
           {tab === "overview" && (
-            <Overview revenue={revenue} pending={pending} totalViews={totalViews} listingsCount={listings.length} />
+            <Overview revenue={revenue} pending={pending} totalViews={totalViews} listingsCount={listings.length} onGoPremium={() => setTab("boost")} />
           )}
           {tab === "shop" && <ShopEditor userId={user.id} />}
           {tab === "listings" && <Listings listings={listings} />}
