@@ -89,4 +89,3 @@ export const generateShopDescription = createServerFn({ method: "POST" })
     return { description, issues };
   });
 
-  });
