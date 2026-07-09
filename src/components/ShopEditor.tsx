@@ -318,9 +318,23 @@ export function ShopEditor({ userId }: { userId: string }) {
               maxLength={2000}
               placeholder="Parlez de votre savoir-faire, votre style, votre histoire…"
             />
-            <div className="text-right text-[10px] text-slate-400">
-              {(shop.description ?? "").length}/2000
-            </div>
+            {(() => {
+              const issues = shop.description ? validateDescription(shop.description) : [];
+              const blocking = issues.filter((i) => i.type !== "too_short");
+              return (
+                <>
+                  {blocking.length > 0 && (
+                    <ul className="rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-700 ring-1 ring-rose-200 space-y-0.5">
+                      {blocking.map((i, k) => <li key={k}>⚠ {i.message}</li>)}
+                    </ul>
+                  )}
+                  <div className="flex justify-between text-[10px] text-slate-400">
+                    <span>{blocking.length === 0 && shop.description ? "✓ Description valide" : ""}</span>
+                    <span>{(shop.description ?? "").length}/2000</span>
+                  </div>
+                </>
+              );
+            })()}
           </div>
         </Field>
       </div>
