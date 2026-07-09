@@ -122,6 +122,14 @@ export function ShopEditor({ userId }: { userId: string }) {
   };
 
   const onSave = async () => {
+    if (shop.description && shop.description.trim().length > 0) {
+      const issues = validateDescription(shop.description);
+      const blocking = issues.filter((i) => i.type !== "too_short");
+      if (blocking.length > 0) {
+        toast.error(blocking.map((i) => i.message).join(" "), { duration: 6000 });
+        return;
+      }
+    }
     setSaving(true);
     const { error } = await supabase
       .from("shops")
