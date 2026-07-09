@@ -40,8 +40,12 @@ export function ShopEditor({ userId }: { userId: string }) {
   const [saving, setSaving] = useState(false);
   const [savingMedia, setSavingMedia] = useState(false);
   const [becoming, setBecoming] = useState(false);
+  const [aiBusy, setAiBusy] = useState(false);
+  const [aiKeywords, setAiKeywords] = useState("");
+  const genDesc = useServerFn(generateShopDescription);
 
   const load = async () => {
+
     const { data } = await supabase
       .from("shops")
       .select("*")
