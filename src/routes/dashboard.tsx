@@ -228,13 +228,45 @@ function Overview({ revenue, pending, totalViews, listingsCount }: any) {
           </div>
         </div>
 
-        <div className="rounded-2xl bg-gradient-to-br from-amber-50 to-amber-100/60 p-6 shadow-sm ring-1 ring-amber-200">
-          <Crown className="h-6 w-6 text-amber-600" />
-          <h3 className="mt-3 font-display text-lg">Passez en Premium</h3>
-          <p className="mt-1 text-sm text-slate-600">Boostez vos annonces et apparaissez en tête des recherches.</p>
-          <button className="mt-4 inline-flex items-center gap-2 rounded-full bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700">
-            <Sparkles className="h-4 w-4" /> Activer Premium
-          </button>
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-500 via-amber-400 to-orange-400 p-6 text-white shadow-lg ring-1 ring-amber-300">
+          <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
+          <div className="absolute -bottom-8 -left-8 h-24 w-24 rounded-full bg-white/10 blur-xl" />
+          <div className="relative">
+            <div className="flex items-center justify-between">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider backdrop-blur">
+                <Crown className="h-3 w-3" /> Premium
+              </span>
+              <span className="rounded-full bg-white/95 px-2 py-0.5 text-[10px] font-bold text-amber-600">-20%</span>
+            </div>
+            <h3 className="mt-4 font-display text-xl leading-tight">Boostez vos ventes</h3>
+            <p className="mt-1 text-sm text-white/90">Vos annonces mises en avant, plus de vues, plus de clients.</p>
+
+            <ul className="mt-4 space-y-1.5 text-xs">
+              {[
+                "Top de la grille & slider accueil",
+                "Badge doré Vérifié",
+                "Statistiques détaillées",
+              ].map((f) => (
+                <li key={f} className="flex items-start gap-2">
+                  <Check className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                  <span>{f}</span>
+                </li>
+              ))}
+            </ul>
+
+            <div className="mt-4 flex items-baseline gap-1">
+              <span className="font-display text-3xl">2 500</span>
+              <span className="text-xs text-white/80">FCFA / 7 jours</span>
+            </div>
+
+            <button
+              onClick={onGoPremium}
+              className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-white px-4 py-2.5 text-sm font-semibold text-amber-700 shadow-sm transition hover:bg-amber-50"
+            >
+              <Sparkles className="h-4 w-4" /> Activer Premium
+            </button>
+            <p className="mt-2 text-center text-[10px] text-white/80">Paiement Orange Money · Wave · Free</p>
+          </div>
         </div>
       </div>
     </>
